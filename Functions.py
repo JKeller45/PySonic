@@ -40,13 +40,15 @@ def bins(freq, amp, heights, num_bars):
             continue
         freq[c] = log10(v)
     bins = np.linspace(log10(20),log10(25000),num_bars)
-    pointer = 1
-    for c,v in enumerate(freq):
-        if bins[pointer - 1] < v <= bins[pointer]:
-            add_height(heights, pointer, amp[c], 90, "middle")
-        else:
-            pointer += 1
-            add_height(heights, pointer, amp[c], 90, "middle")
+    for c,_ in enumerate(bins):
+        if c == 0:
+            continue
+        for i,f in enumerate(freq):
+            if f <= bins[c - 1]:
+                continue
+            if f > bins[c]:
+                break
+            add_height(heights, c, amp[i], 90, "middle")
     heights = heights / 1_000_000_000
     if max(heights) > 300:
         heights = heights / (max(heights) / 300)

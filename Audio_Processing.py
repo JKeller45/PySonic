@@ -50,7 +50,7 @@ if __name__ == "__main__":
         num_bars = 1919
     ffts = []
 
-    length_in_frames = 1500
+    length_in_frames = 300
     length_in_seconds = 1/frame_rate * length_in_frames
 
     args = []
