@@ -1,0 +1,7 @@
+title = "Temporary Config"
+
+[settings]
+frame_rate = 30
+width = 10
+separation = 5
+connected_bars = true
