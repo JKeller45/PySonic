@@ -27,33 +27,60 @@ def calc_fft(args):
     start, stop, step, signal = args
     t = np.arange(start, stop, step)
     FFT = abs(fftp.fft(signal))
-    FFT_side = FFT[range(len(FFT)//2)]
+    FFT_side = FFT[range(len(FFT) // 2)]
     freqs = fftp.fftfreq(signal.size, t[1]-t[0])
     freqs_side = freqs[range(len(FFT)//2)]
     return freqs_side, FFT_side
 
-def draw_rect(output_image, xcoord, ycoord, width, height, color):
+def draw_rect(output_image, xcoord, ycoord, config, height):
     for y in range(int(height)):
-        for x in range(width):
-            output_image[ycoord - y][xcoord + x] = [color[0], color[1], color[2], 255]
+        for x in range(config["width"]):
+            if config["horizontal_bars"]:
+                if config["inverted_bars"]:
+                    output_image[ycoord + x][xcoord - y] = config["color"]
+                else:
+                    output_image[ycoord + x][xcoord + y] = config["color"]
+            else:
+                if config["inverted_bars"]:
+                    output_image[ycoord + y][xcoord + x] = config["color"]
+                else:
+                    output_image[ycoord - y][xcoord + x] = config["color"] #[color[0], color[1], color[2], 255]
     return output_image
 
 def draw_bars(args):
-    backgroud, num_bars, heights, color, width, separation = args
-    transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
-    xcoord = 0
-    for i in range(num_bars):
-        draw_rect(transparent, xcoord, 1079, width, heights[i] + 1, color)
-        xcoord += (width + separation)
-    #transparent = cv2.GaussianBlur(transparent, (3,3), cv2.BORDER_DEFAULT)
-    return cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
+    backgroud, num_bars, heights, config = args
+    #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
+    offset = 0
+    if not config["inverted_bars"]:
+        for i in range(num_bars):
+            if config["horizontal_bars"]:
+                draw_rect(backgroud, 0, offset, config, heights[i] + 1)
+            else:
+                draw_rect(backgroud, offset, 1079, config, heights[i] + 1)
+            offset += (config["width"] + config["separation"])
+    else:
+        for i in range(num_bars):
+            if config["horizontal_bars"]:
+                draw_rect(backgroud, 1919, offset, config, heights[i] + 1)
+            else:
+                draw_rect(backgroud, offset, 0, config, heights[i] + 1)
+            offset += (config["width"] + config["separation"])
+    if config["SSAA"]:
+        sr = cv2.dnn_superres.DnnSuperResImpl_create()
+        path = "ESPCN_x2.pb"
+        sr.readModel(path)
+        sr.setModel("espcn", 2)
+        result = sr.upsample(backgroud)
+        backgroud = np.array(im.fromarray(result).resize((len(result[0]) // 2, len(result) // 2), resample=im.ANTIALIAS))
+        return backgroud #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
+    return backgroud
 
 def bins(freq, amp, heights, num_bars, width):
     for c,v in enumerate(freq):
         if v == 0:
             continue
         freq[c] = log10(v)
-    bins = np.linspace(log10(20),log10(25000),num_bars)
+    bins = np.linspace(log10(20),log10(20000),num_bars)
     for c,_ in enumerate(bins):
         if c == 0:
             continue
@@ -69,7 +96,7 @@ def bins(freq, amp, heights, num_bars, width):
     return heights
 
 def add_height(heights, group, amp, angle, side, width):
-    if angle <= 0 or group < 0 or group >= len(heights):
+    if angle <= 0 or group <= 0 or group >= len(heights):
         return
     heights[group] += amp * sin(radians(angle))
     if side == "left" or side == "middle":

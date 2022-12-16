@@ -7,28 +7,19 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 import Functions as F
 from copy import deepcopy
 
-
 if __name__ == "__main__":
     with open("config.toml", "rb") as f:
         config = tl.load(f)
 
-    FILE = config["settings"]["FILE"]
-    color = config["settings"]["color"]
-    background = config["settings"]["background"]
-    width = config["settings"]["width"]
-    connected = config["settings"]["connected_bars"]
-    separation = config["settings"]["separation"]
-    frame_rate = config["settings"]["frame_rate"]
+    config = config["settings"]
 
-    background = cv2.imread(background)
-    background = cv2.resize(background, (1920,1080), interpolation=cv2.INTER_AREA)
+    background = cv2.imread(config["background"])
+    background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
 
-    if connected:
-        separation = 0
-    else:
-        separation = 4
+    if config["connected_bars"]:
+        config["background"] = 0
 
-    fs_rate, signal = wavfile.read(FILE)
+    fs_rate, signal = wavfile.read(config["FILE"])
     print ("Frequency sampling", fs_rate)
     l_audio = len(signal.shape)
     print ("Channels", l_audio)
@@ -41,19 +32,22 @@ if __name__ == "__main__":
     Ts = 1.0/fs_rate
     print ("Timestep between samples Ts", Ts)
 
-    num_frames = int((1/frame_rate)/Ts)
+    num_frames = int((1/config["frame_rate"])/Ts)
     curr_step = num_frames
     prev_step = 0
     
-    num_bars = 1920 // (width + separation)
-    if num_bars >= 1920:
-        num_bars = 1919
+    if config["horizontal_bars"]:
+        num_bars = config["size"][1] // (config["width"] + config["separation"])
+    else:
+        num_bars = config["size"][0] // (config["width"] + config["separation"])
+    if num_bars >= config["size"][0]:
+        num_bars = config["size"][0] - 1
     ffts = []
 
     length_in_frames = 30
-    length_in_seconds = 1/frame_rate * length_in_frames
+    length_in_seconds = 1/config["frame_rate"] * length_in_frames
 
-    result = cv2.VideoWriter(f'{FILE}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), frame_rate, (1920,1080))
+    result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
 
     for _ in range(3):
         args = []
@@ -66,7 +60,7 @@ if __name__ == "__main__":
 
         args = []
         for n in ffts:
-            args.append((deepcopy(background), num_bars, F.bins(n[0], n[1], np.ones(num_bars), num_bars, width), color, width, separation))
+            args.append((deepcopy(background), num_bars, F.bins(n[0], n[1], np.ones(num_bars), num_bars, config["width"]), config))
         with Pool(processes=10) as pool:
             output = pool.map(F.draw_bars, args)
         args = []
@@ -76,6 +70,7 @@ if __name__ == "__main__":
         output = []
         ffts = []
         
+    FILE = config["FILE"]
     result.release()
     video = VideoFileClip(f"{FILE}.mp4")
     audio = AudioFileClip(FILE)
