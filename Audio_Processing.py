@@ -44,14 +44,14 @@ if __name__ == "__main__":
         num_bars = config["size"][0] - 1
     ffts = []
 
-    length_in_frames = 30
-    length_in_seconds = 1/config["frame_rate"] * length_in_frames
+    length_in_seconds = 178
+    length_in_frames = config["frame_rate"] * length_in_seconds
 
     result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
 
-    for _ in range(3):
+    for _ in range(20):
         args = []
-        for n in range(int(length_in_frames/3)):
+        for n in range(int(length_in_frames/20)):
             args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
             curr_step += num_frames
             prev_step += num_frames

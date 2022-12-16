@@ -80,7 +80,7 @@ def bins(freq, amp, heights, num_bars, width):
         if v == 0:
             continue
         freq[c] = log10(v)
-    bins = np.linspace(log10(20),log10(20000),num_bars)
+    bins = np.linspace(log10(50),log10(20000),num_bars)
     for c,_ in enumerate(bins):
         if c == 0:
             continue
@@ -96,10 +96,10 @@ def bins(freq, amp, heights, num_bars, width):
     return heights
 
 def add_height(heights, group, amp, angle, side, width):
-    if angle <= 0 or group <= 0 or group >= len(heights):
+    if angle <= 0 or group < 0 or group >= len(heights):
         return
     heights[group] += amp * sin(radians(angle))
     if side == "left" or side == "middle":
-        add_height(heights, group - 1, amp, angle - 2 * width * log10(group), "left", width)
+        add_height(heights, group - 1, amp, angle - 2 * width * log10(group + 1), "left", width)
     if side == "right" or side == "middle":
-        add_height(heights, group + 1, amp, angle - 2 * width * log10(group), "right", width)
+        add_height(heights, group + 1, amp, angle - 2 * width * log10(group + 1), "right", width)
