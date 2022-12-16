@@ -2,6 +2,8 @@ import scipy.fftpack as fftp
 import numpy as np
 from matplotlib import pyplot as plt
 from math import log10, sin, radians
+import cv2
+from PIL import Image as im
 
 def plot_fft(freqs_side, FFT_side):
     plt.subplot(311)
@@ -11,6 +13,15 @@ def plot_fft(freqs_side, FFT_side):
     plt.xscale("log")
     plt.xlim((0,25000))
     plt.show()
+
+def alpha_composite(foreground, background):
+    alpha_background = background[:,:,3] / 255.0
+    alpha_foreground = foreground[:,:,3] / 255.0
+    for color in range(0, 3):
+        background[:,:,color] = alpha_foreground * foreground[:,:,color] + \
+            alpha_background * background[:,:,color] * (1 - alpha_foreground)
+    background[:,:,3] = (1 - (1 - alpha_foreground) * (1 - alpha_background)) * 255
+    return background
 
 def calc_fft(args):
     start, stop, step, signal = args
@@ -24,17 +35,20 @@ def calc_fft(args):
 def draw_rect(output_image, xcoord, ycoord, width, height, color):
     for y in range(int(height)):
         for x in range(width):
-            output_image[ycoord - y][xcoord + x] = color
+            output_image[ycoord - y][xcoord + x] = [color[0], color[1], color[2], 255]
+    return output_image
 
 def draw_bars(args):
     backgroud, num_bars, heights, color, width, separation = args
+    transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     xcoord = 0
     for i in range(num_bars):
-        draw_rect(backgroud, xcoord, 1079, width, heights[i] + 1, color)
+        draw_rect(transparent, xcoord, 1079, width, heights[i] + 1, color)
         xcoord += (width + separation)
-    return backgroud
+    #transparent = cv2.GaussianBlur(transparent, (3,3), cv2.BORDER_DEFAULT)
+    return cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
 
-def bins(freq, amp, heights, num_bars):
+def bins(freq, amp, heights, num_bars, width):
     for c,v in enumerate(freq):
         if v == 0:
             continue
@@ -48,17 +62,17 @@ def bins(freq, amp, heights, num_bars):
                 continue
             if f > bins[c]:
                 break
-            add_height(heights, c, amp[i], 90, "middle")
+            add_height(heights, c, amp[i], 90, "middle", width)
     heights = heights / 1_000_000_000
     if max(heights) > 300:
         heights = heights / (max(heights) / 300)
     return heights
 
-def add_height(heights, group, amp, angle, side):
+def add_height(heights, group, amp, angle, side, width):
     if angle <= 0 or group < 0 or group >= len(heights):
         return
     heights[group] += amp * sin(radians(angle))
     if side == "left" or side == "middle":
-        add_height(heights, group - 1, amp, angle - 15, "left")
+        add_height(heights, group - 1, amp, angle - 2 * width * log10(group), "left", width)
     if side == "right" or side == "middle":
-        add_height(heights, group + 1, amp, angle - 15, "right")
+        add_height(heights, group + 1, amp, angle - 2 * width * log10(group), "right", width)

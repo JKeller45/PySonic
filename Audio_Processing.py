@@ -50,28 +50,33 @@ if __name__ == "__main__":
         num_bars = 1919
     ffts = []
 
-    length_in_frames = 300
+    length_in_frames = 30
     length_in_seconds = 1/frame_rate * length_in_frames
 
-    args = []
-    for n in range(length_in_frames):
-        args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
-        curr_step += num_frames
-        prev_step += num_frames
-    with Pool(processes=10) as pool:
-        ffts = pool.map(F.calc_fft, args)
-
-    args = []
-    for n in ffts:
-        args.append((deepcopy(background), num_bars, F.bins(n[0], n[1], np.ones(num_bars), num_bars), color, width, separation))
-    with Pool(processes=10) as pool:
-        output = pool.map(F.draw_bars, args)
-
     result = cv2.VideoWriter(f'{FILE}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), frame_rate, (1920,1080))
-    for f in output:
-        result.write(f)
-    result.release()
 
+    for _ in range(3):
+        args = []
+        for n in range(int(length_in_frames/3)):
+            args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
+            curr_step += num_frames
+            prev_step += num_frames
+        with Pool(processes=10) as pool:
+            ffts = pool.map(F.calc_fft, args)
+
+        args = []
+        for n in ffts:
+            args.append((deepcopy(background), num_bars, F.bins(n[0], n[1], np.ones(num_bars), num_bars, width), color, width, separation))
+        with Pool(processes=10) as pool:
+            output = pool.map(F.draw_bars, args)
+        args = []
+
+        for f in output:
+            result.write(f)
+        output = []
+        ffts = []
+        
+    result.release()
     video = VideoFileClip(f"{FILE}.mp4")
     audio = AudioFileClip(FILE)
     audio = audio.subclip(0, length_in_seconds)
