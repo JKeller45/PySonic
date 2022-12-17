@@ -8,9 +8,9 @@ import Functions as F
 from copy import deepcopy
 
 def render(config):
-    #with open("config.toml", "rb") as f:
-    #    config = tl.load(f)
-    #    config = config["settings"]
+    with open("config.toml", "rb") as f:
+        config = tl.load(f)
+        config = config["settings"]
 
     background = cv2.imread(config["background"])
     background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
