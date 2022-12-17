@@ -1,0 +1,170 @@
+<?xml version='1.0' encoding='utf-8'?>
+<interface version="1.3">
+  <object class="tk.Toplevel" id="PySonic" named="True">
+    <property name="geometry">400x300</property>
+    <property name="height">200</property>
+    <property name="width">200</property>
+    <child>
+      <object class="ttk.Frame" id="frame1">
+        <property name="height">300</property>
+        <property name="width">400</property>
+        <layout manager="pack">
+          <property name="side">top</property>
+        </layout>
+        <child>
+          <object class="ttk.Button" id="render" named="True">
+            <property name="command" type="command" cbtype="simple">run</property>
+            <property name="text" translatable="yes">Render</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">30</property>
+              <property name="relx">0.0</property>
+              <property name="rely">0.0</property>
+              <property name="width">80</property>
+              <property name="x">310</property>
+              <property name="y">260</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="hex" named="True">
+            <property name="text" translatable="yes">Hex Color Code</property>
+            <property name="textvariable">string:color</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">75</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="fps" named="True">
+            <property name="justify">left</property>
+            <property name="state">normal</property>
+            <property name="text" translatable="yes">Video Framerate</property>
+            <property name="textvariable">int:framerate</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">100</property>
+              <property name="x">145</property>
+              <property name="y">75</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Combobox" id="res" named="True">
+            <property name="cursor">arrow</property>
+            <property name="state">normal</property>
+            <property name="textvariable">string:resolution</property>
+            <property name="values">720p 1080p 4K</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">134</property>
+              <property name="x">255</property>
+              <property name="y">75</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="bar_width" named="True">
+            <property name="justify">left</property>
+            <property name="text" translatable="yes">Bar Width</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">100</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="bar_sep" named="True">
+            <property name="text" translatable="yes">Bar Separation</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">100</property>
+              <property name="x">145</property>
+              <property name="y">100</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Entry" id="vid_length" named="True">
+            <property name="text" translatable="yes">Length (seconds)</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">135</property>
+              <property name="x">255</property>
+              <property name="y">100</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Combobox" id="pos" named="True">
+            <property name="state">normal</property>
+            <property name="takefocus">false</property>
+            <property name="values">Bottom Top Left Right</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">200</property>
+              <property name="y">125</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="pygubu.builder.widgets.pathchooserinput" id="audio_path" named="True">
+            <property name="type">file</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">305</property>
+              <property name="x">85</property>
+              <property name="y">10</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="pygubu.builder.widgets.pathchooserinput" id="bg_path" named="True">
+            <property name="type">file</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">305</property>
+              <property name="x">85</property>
+              <property name="y">45</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="Audio_File" named="True">
+            <property name="text" translatable="yes">Audio File:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">12</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="bg_img" named="True">
+            <property name="text" translatable="yes">Background:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">48</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Checkbutton" id="ssaa" named="True">
+            <property name="command" type="command" cbtype="simple">set_aa</property>
+            <property name="text" translatable="yes">Super Sampling Anti-Aliasing</property>
+            <property name="variable">boolean:aa</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">125</property>
+            </layout>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

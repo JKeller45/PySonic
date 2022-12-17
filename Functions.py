@@ -44,7 +44,7 @@ def draw_rect(output_image, xcoord, ycoord, config, height):
                 if config["inverted_bars"]:
                     output_image[ycoord + y][xcoord + x] = config["color"]
                 else:
-                    output_image[ycoord - y][xcoord + x] = config["color"] #[color[0], color[1], color[2], 255]
+                    output_image[ycoord - y][xcoord + x] = config["color"]
     return output_image
 
 def draw_bars(args):
@@ -56,12 +56,12 @@ def draw_bars(args):
             if config["horizontal_bars"]:
                 draw_rect(backgroud, 0, offset, config, heights[i] + 1)
             else:
-                draw_rect(backgroud, offset, 1079, config, heights[i] + 1)
+                draw_rect(backgroud, offset, config["size"][1] - 1, config, heights[i] + 1)
             offset += (config["width"] + config["separation"])
     else:
         for i in range(num_bars):
             if config["horizontal_bars"]:
-                draw_rect(backgroud, 1919, offset, config, heights[i] + 1)
+                draw_rect(backgroud, config["size"][1] - 1, offset, config, heights[i] + 1)
             else:
                 draw_rect(backgroud, offset, 0, config, heights[i] + 1)
             offset += (config["width"] + config["separation"])
@@ -72,7 +72,7 @@ def draw_bars(args):
         sr.setModel("espcn", 2)
         result = sr.upsample(backgroud)
         backgroud = np.array(im.fromarray(result).resize((len(result[0]) // 2, len(result) // 2), resample=im.ANTIALIAS))
-        return backgroud #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
+        #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
     return backgroud
 
 def bins(freq, amp, heights, num_bars, width):
