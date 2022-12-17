@@ -8,10 +8,6 @@ import Functions as F
 from copy import deepcopy
 
 def render(config):
-    with open("config.toml", "rb") as f:
-        config = tl.load(f)
-        config = config["settings"]
-
     background = cv2.imread(config["background"])
     background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
 
@@ -43,12 +39,15 @@ def render(config):
     length_in_seconds = config["length"]
     length_in_frames = config["frame_rate"] * length_in_seconds
 
-    result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
+    if config["interpolation"]:
+        result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"] * 2, config["size"])
+    else:
+        result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
     FILE = config["FILE"]
 
-    for _ in range(1):
+    for _ in range(5):
         args = []
-        for n in range(int(length_in_frames/1)):
+        for n in range(int(length_in_frames/5)):
             args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
             curr_step += num_frames
             prev_step += num_frames
@@ -56,15 +55,33 @@ def render(config):
             ffts = pool.map(F.calc_fft, args)
 
         args = []
+        heights = []
         for n in ffts:
-            args.append((deepcopy(background), num_bars, F.bins(n[0], n[1], np.ones(num_bars), num_bars, config["width"]), config))
+            heights.append(F.bins(n[0], n[1], np.ones(num_bars), num_bars, config["width"]))
+        for c,n in enumerate(ffts):
+            args.append((deepcopy(background), num_bars, heights[c], config))
         with Pool(processes=10) as pool:
             output = pool.map(F.draw_bars, args)
         args = []
 
-        for f in output:
+        if config["interpolation"]:
+            midpoint_heights = []
+            for c,h in enumerate(heights):
+                if c == 0:
+                    pass
+                midpoint_heights.append((h + heights[c - 1]) // 2)
+            for c,n in enumerate(ffts):
+                args.append((deepcopy(background), num_bars, midpoint_heights[c], config))
+            with Pool(processes=10) as pool:
+                midpoints = pool.map(F.draw_bars, args)
+        args = []
+
+        for i,f in enumerate(output):
             result.write(f)
+            if config["interpolation"]:
+                result.write(midpoints[i])
         output = []
+        midpoints = []
         ffts = []
         
     result.release()
@@ -75,4 +92,7 @@ def render(config):
     final_clip.write_videofile(f"{FILE}_Audio.mp4")
 
 if __name__ == "__main__":
-    render()
+    with open("config.toml", "rb") as f:
+        config = tl.load(f)
+        config = config["settings"]
+    render(config)
