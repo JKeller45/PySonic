@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from multiprocessing import Pool
 import tomllib as tl
-from moviepy.editor import VideoFileClip, AudioFileClip, ImageSequenceClip
+from moviepy.editor import VideoFileClip, AudioFileClip
 import Functions as F
 from copy import deepcopy
 
@@ -27,7 +27,7 @@ def render(config):
     num_frames = int((1/config["frame_rate"])/Ts)
     curr_step = num_frames
     prev_step = 0
-    
+
     if config["horizontal_bars"]:
         num_bars = config["size"][1] // (config["width"] + config["separation"])
     else:
@@ -57,7 +57,7 @@ def render(config):
         args = []
         heights = []
         for n in ffts:
-            heights.append(F.bins(n[0], n[1], np.ones(num_bars), num_bars, config["width"]))
+            heights.append(F.bins(n[0], n[1], np.ones(num_bars), num_bars, config))
         for c,n in enumerate(ffts):
             args.append((deepcopy(background), num_bars, heights[c], config))
         with Pool(processes=10) as pool:

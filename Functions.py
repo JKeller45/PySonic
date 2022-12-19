@@ -75,7 +75,7 @@ def draw_bars(args):
         #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
     return backgroud
 
-def bins(freq, amp, heights, num_bars, width):
+def bins(freq, amp, heights, num_bars, config):
     for c,v in enumerate(freq):
         if v == 0:
             continue
@@ -89,8 +89,9 @@ def bins(freq, amp, heights, num_bars, width):
                 continue
             if f > bins[c]:
                 break
-            add_height(heights, c, amp[i], 90, "middle", width)
+            add_height(heights, c, amp[i], 90, "middle", config["width"])
     heights = heights / 1_000_000_000
+    heights = heights * (config["frame_rate"] / 30)
     if max(heights) > 300:
         heights = heights / (max(heights) / 300)
     return heights
