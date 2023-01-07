@@ -3,15 +3,20 @@ import pathlib
 import tkinter as tk
 import tkinter.ttk as ttk
 import pygubu
+from tkinter.colorchooser import askcolor
+from PIL import ImageColor
 
 PROJECT_PATH = pathlib.Path(__file__).parent
 PROJECT_UI = PROJECT_PATH / "ui.ui"
+
+config = {}
 
 class Application:
     def __init__(self, master=None):
         callbacks = {
                 'run': run,
-                'set_aa': set_aa
+                'set_aa': set_aa,
+                'pick_color': pick_color
         }
         self.builder = builder = pygubu.Builder()
         builder.add_resource_path(PROJECT_PATH)
@@ -19,6 +24,7 @@ class Application:
         self.mainwindow = builder.get_object('PySonic', master)
 
         self.aa = False
+        self.hex = 000000
 
         self.audio_path = builder.get_object('audio_path')
         self.vid_length = builder.get_object('vid_length')
@@ -39,8 +45,12 @@ class Application:
 def set_aa():
     app.aa = not app.aa
 
+def pick_color():
+    global config
+    colors = askcolor(title="Tkinter Color Chooser")
+    config["color"] = list(ImageColor.getrgb(colors[1]))
 def run():
-    config = {}
+    global config
     config["FILE"] = app.audio_path.cget('path')
     config["length"] = int(app.vid_length.get())
     size = app.res.get()
@@ -50,14 +60,11 @@ def run():
         config["size"] = [1920, 1080]
     else:
         config["size"] = [3840, 2160]
-    hex = app.color.get().lstrip('#')
-    config["color"] = list(int(hex[i:i+2], 16) for i in (0, 2, 4))
     config["background"] = app.bg_path.cget('path')
     config["frame_rate"] = int(app.fps.get())
     config["width"] = int(app.width.get())
     config["separation"] = int(app.sep.get())
     config["SSAA"] = app.aa
-    print(config["SSAA"])
     pos = app.pos.get()
     if pos == "Top":
         config["horizontal_bars"] = False
@@ -71,9 +78,10 @@ def run():
     elif pos == "Right":
         config["horizontal_bars"] = True
         config["inverted_bars"] = True
+    config["interpolation"] = False
 
     render(config)
 
 if __name__ == '__main__':
     app = Application()
-    #app.run()
+    app.run()
