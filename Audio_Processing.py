@@ -39,15 +39,15 @@ def render(config):
     length_in_seconds = config["length"]
     length_in_frames = config["frame_rate"] * length_in_seconds
 
-    if config["interpolation"]:
-        result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"] * 2, config["size"])
+    if config["AISS"]:
+        result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], (config["size"][0] * 2, config["size"][1] * 2))
     else:
         result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
     FILE = config["FILE"]
 
     for _ in range(5):
         args = []
-        for n in range(int(length_in_frames/5)):
+        for n in range(int(length_in_frames / 5)):
             args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
             curr_step += num_frames
             prev_step += num_frames
@@ -64,22 +64,8 @@ def render(config):
             output = pool.map(F.draw_bars, args)
         args = []
 
-        if config["interpolation"]:
-            midpoint_heights = []
-            for c,h in enumerate(heights):
-                if c == 0:
-                    pass
-                midpoint_heights.append((h + heights[c - 1]) // 2)
-            for c,n in enumerate(ffts):
-                args.append((deepcopy(background), num_bars, midpoint_heights[c], config))
-            with Pool(processes=10) as pool:
-                midpoints = pool.map(F.draw_bars, args)
-        args = []
-
         for i,f in enumerate(output):
             result.write(f)
-            if config["interpolation"]:
-                result.write(midpoints[i])
         output = []
         midpoints = []
         ffts = []

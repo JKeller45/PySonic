@@ -2,8 +2,8 @@ title = "Temporary Config"
 
 [settings]
 FILE = "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav"
-length = 10
-size = [1920, 1080]
+length = 5
+size = [960, 540]
 color = [255, 255, 255]
 background = "C:/Users/james/Desktop/pexels-pixabay-417173.jpg"
 frame_rate = 30
@@ -13,4 +13,4 @@ connected_bars = false
 horizontal_bars = true
 inverted_bars = false
 SSAA = false
-interpolation = true
+AISS = true

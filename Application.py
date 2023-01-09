@@ -18,6 +18,7 @@ class Application:
                 'set_aa': set_aa,
                 'pick_color': pick_color
         }
+        
         self.builder = builder = pygubu.Builder()
         builder.add_resource_path(PROJECT_PATH)
         builder.add_from_file(PROJECT_UI)
@@ -43,13 +44,24 @@ class Application:
         self.mainwindow.mainloop()
 
 def set_aa():
+    """
+    Toggles the Anti-aliasing setting variable
+    """
     app.aa = not app.aa
 
 def pick_color():
+    """
+    Uses the Tkinter color chooser to select a color value and convert to RGB
+    """
     global config
-    colors = askcolor(title="Tkinter Color Chooser")
-    config["color"] = list(ImageColor.getrgb(colors[1]))
+    colors = askcolor(title="Color Chooser")
+    if colors != None:
+        config["color"] = list(ImageColor.getrgb(colors[1]))
+
 def run():
+    """
+    Runs the application. Sets all settings in the config dictionary and calls the render function
+    """
     global config
     config["FILE"] = app.audio_path.cget('path')
     config["length"] = int(app.vid_length.get())
