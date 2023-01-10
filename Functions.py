@@ -65,17 +65,19 @@ def draw_bars(args):
             else:
                 draw_rect(backgroud, offset, 0, config, heights[i] + 1)
             offset += (config["width"] + config["separation"])
-    if config["SSAA"]:
+    if config["SSAA"] or config["AISS"]:
         sr = cv2.dnn_superres.DnnSuperResImpl_create()
         path = "ESPCN_x2.pb"
         sr.readModel(path)
         sr.setModel("espcn", 2)
         result = sr.upsample(backgroud)
-        backgroud = np.array(im.fromarray(result).resize((len(result[0]) // 2, len(result) // 2), resample=im.ANTIALIAS))
+        backgroud = result
+        if config["SSAA"]:
+            backgroud = np.array(im.fromarray(backgroud).resize((len(backgroud[0]) // 2, len(backgroud) // 2), resample=im.ANTIALIAS))
         #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
     return backgroud
 
-def bins(freq, amp, heights, num_bars, width):
+def bins(freq, amp, heights, num_bars, config):
     for c,v in enumerate(freq):
         if v == 0:
             continue
@@ -89,8 +91,10 @@ def bins(freq, amp, heights, num_bars, width):
                 continue
             if f > bins[c]:
                 break
-            add_height(heights, c, amp[i], 90, "middle", width)
+            add_height(heights, c, amp[i], 90, "middle", config["width"])
     heights = heights / 1_000_000_000
+    heights = heights * (config["frame_rate"] // 30)
+    heights = heights * (config["size"][1] / 1080)
     if max(heights) > 300:
         heights = heights / (max(heights) / 300)
     return heights
