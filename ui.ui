@@ -45,7 +45,7 @@
             <property name="cursor">arrow</property>
             <property name="state">normal</property>
             <property name="textvariable">string:resolution</property>
-            <property name="values">720p 1080p 4K</property>
+            <property name="values">720p 1080p 1440p 4K</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="width">134</property>
@@ -164,7 +164,19 @@
               <property name="relx">0.0</property>
               <property name="width">125</property>
               <property name="x">10</property>
-              <property name="y">75</property>
+              <property name="y">73</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Checkbutton" id="aiss" named="True">
+            <property name="command" type="command" cbtype="simple">set_ss</property>
+            <property name="text" translatable="yes">AI Super Sampling</property>
+            <property name="variable">boolean:ss</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">155</property>
             </layout>
           </object>
         </child>

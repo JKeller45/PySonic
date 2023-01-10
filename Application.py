@@ -16,7 +16,8 @@ class Application:
         callbacks = {
                 'run': run,
                 'set_aa': set_aa,
-                'pick_color': pick_color
+                'pick_color': pick_color,
+                'set_ss': set_ss
         }
         
         self.builder = builder = pygubu.Builder()
@@ -25,7 +26,7 @@ class Application:
         self.mainwindow = builder.get_object('PySonic', master)
 
         self.aa = False
-        self.hex = 000000
+        self.ss = False
 
         self.audio_path = builder.get_object('audio_path')
         self.vid_length = builder.get_object('vid_length')
@@ -49,6 +50,12 @@ def set_aa():
     """
     app.aa = not app.aa
 
+def set_ss():
+    """
+    Toggles the Super Sampling setting variable
+    """
+    app.ss = not app.ss
+
 def pick_color():
     """
     Uses the Tkinter color chooser to select a color value and convert to RGB
@@ -70,6 +77,8 @@ def run():
         config["size"] = [1280, 720]
     elif size == "1080p":
         config["size"] = [1920, 1080]
+    elif size == "1440p":
+        config["size"] = [2560, 1440]
     else:
         config["size"] = [3840, 2160]
     config["background"] = app.bg_path.cget('path')
@@ -77,6 +86,7 @@ def run():
     config["width"] = int(app.width.get())
     config["separation"] = int(app.sep.get())
     config["SSAA"] = app.aa
+    config["AISS"] = app.ss
     pos = app.pos.get()
     if pos == "Top":
         config["horizontal_bars"] = False
