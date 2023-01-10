@@ -73,6 +73,7 @@ def run():
     config["FILE"] = app.audio_path.cget('path')
     config["length"] = int(app.vid_length.get())
     size = app.res.get()
+
     if size == "720p":
         config["size"] = [1280, 720]
     elif size == "1080p":
@@ -81,6 +82,7 @@ def run():
         config["size"] = [2560, 1440]
     else:
         config["size"] = [3840, 2160]
+    
     config["background"] = app.bg_path.cget('path')
     config["frame_rate"] = int(app.fps.get())
     config["width"] = int(app.width.get())

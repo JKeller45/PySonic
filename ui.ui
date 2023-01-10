@@ -90,7 +90,6 @@
         <child>
           <object class="ttk.Combobox" id="pos" named="True">
             <property name="state">normal</property>
-            <property name="takefocus">false</property>
             <property name="values">Bottom Top Left Right</property>
             <layout manager="place">
               <property name="anchor">nw</property>

@@ -4,8 +4,9 @@ import cv2
 from multiprocessing import Pool
 import tomllib as tl
 from moviepy.editor import VideoFileClip, AudioFileClip
-import Functions as F
 from copy import deepcopy
+
+import Functions as F
 
 def render(config):
     if config["AISS"]:

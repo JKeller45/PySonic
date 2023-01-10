@@ -13,4 +13,4 @@ connected_bars = false
 horizontal_bars = false
 inverted_bars = false
 SSAA = false
-AISS = true
+AISS = false
