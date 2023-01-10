@@ -8,21 +8,22 @@ import Functions as F
 from copy import deepcopy
 
 def render(config):
+    if config["AISS"]:
+        config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
+        config["width"] //= 2
+        config["separation"] //= 2
     background = cv2.imread(config["background"])
     background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
 
     fs_rate, signal = wavfile.read(config["FILE"])
     print ("Frequency sampling", fs_rate)
     l_audio = len(signal.shape)
-    print ("Channels", l_audio)
     if l_audio == 2:
         signal = signal.sum(axis=1) / 2
     N = signal.shape[0]
-    print ("Complete Samplings N", N)
     secs = N / float(fs_rate)
     print ("secs", secs)
     Ts = 1.0/fs_rate
-    print ("Timestep between samples Ts", Ts)
 
     num_frames = int((1/config["frame_rate"])/Ts)
     curr_step = num_frames

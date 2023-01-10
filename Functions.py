@@ -70,9 +70,10 @@ def draw_bars(args):
         path = "ESPCN_x2.pb"
         sr.readModel(path)
         sr.setModel("espcn", 2)
-        background = sr.upsample(backgroud)
+        result = sr.upsample(backgroud)
+        backgroud = result
         if config["SSAA"]:
-            backgroud = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
+            backgroud = np.array(im.fromarray(backgroud).resize((len(backgroud[0]) // 2, len(backgroud) // 2), resample=im.ANTIALIAS))
         #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
     return backgroud
 
@@ -92,7 +93,8 @@ def bins(freq, amp, heights, num_bars, config):
                 break
             add_height(heights, c, amp[i], 90, "middle", config["width"])
     heights = heights / 1_000_000_000
-    heights = heights * (config["frame_rate"] / 30)
+    heights = heights * (config["frame_rate"] // 30)
+    heights = heights * (config["size"][1] / 1080)
     if max(heights) > 300:
         heights = heights / (max(heights) / 300)
     return heights
