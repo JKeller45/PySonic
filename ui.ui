@@ -253,6 +253,18 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.Progressbar" id="progress" named="True">
+            <property name="mode">determinate</property>
+            <property name="orient">horizontal</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">290</property>
+              <property name="x">10</property>
+              <property name="y">265</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
   </object>

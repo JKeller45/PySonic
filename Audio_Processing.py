@@ -6,8 +6,9 @@ import tomllib as tl
 from moviepy.editor import VideoFileClip, AudioFileClip
 from copy import deepcopy
 import Functions as F
+import Classes
 
-def render(config):
+def render(config, progress, main):
     if config["AISS"]:
         config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
         config["width"] //= 2
@@ -50,9 +51,10 @@ def render(config):
         result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
     FILE = config["FILE"]
 
-    for _ in range(5):
+    loops = 5
+    for _ in range(loops):
         args = []
-        for n in range(int(length_in_frames / 5)):
+        for n in range(int(length_in_frames / loops)):
             args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
             curr_step += num_frames
             prev_step += num_frames
@@ -74,6 +76,9 @@ def render(config):
         output = []
         midpoints = []
         ffts = []
+
+        progress.step(100 // loops)
+        main.update()
         
     result.release()
     video = VideoFileClip(f"{FILE}.mp4")
@@ -87,4 +92,4 @@ if __name__ == "__main__":
     with open("config.toml", "rb") as f:
         config = tl.load(f)
         config = config["settings"]
-    render(config)
+    render(config, Classes.Progress_Spoof)

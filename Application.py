@@ -43,6 +43,7 @@ class Application:
         self.sep = builder.get_object('bar_sep')
         self.ssaa = builder.get_object('ssaa')
         self.pos = builder.get_object("pos")
+        self.progress = builder.get_object("progress")
 
         builder.connect_callbacks(callbacks)
 
@@ -124,7 +125,7 @@ def run():
         config["inverted_bars"] = True
     config["interpolation"] = False
 
-    render(config)
+    render(config, app.progress, app.mainwindow)
 
 if __name__ == '__main__':
     app = Application()
