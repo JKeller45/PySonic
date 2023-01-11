@@ -1,7 +1,7 @@
 class Progress_Spoof:
-    def step():
+    def step(self, step):
         pass
 
 class Main_Spoof:
-    def update():
+    def update(self):
         pass
