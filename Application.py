@@ -5,6 +5,8 @@ import tkinter.ttk as ttk
 import pygubu
 from tkinter.colorchooser import askcolor
 from PIL import ImageColor
+import numpy as np
+import cv2
 
 PROJECT_PATH = pathlib.Path(__file__).parent
 PROJECT_UI = PROJECT_PATH / "ui.ui"
@@ -17,7 +19,8 @@ class Application:
                 'run': run,
                 'set_aa': set_aa,
                 'pick_color': pick_color,
-                'set_ss': set_ss
+                'set_ss': set_ss,
+                "pick_bg": pick_bg
         }
         
         self.builder = builder = pygubu.Builder()
@@ -27,6 +30,7 @@ class Application:
 
         self.aa = False
         self.ss = False
+        self.bg_color = None
 
         self.audio_path = builder.get_object('audio_path')
         self.vid_length = builder.get_object('vid_length')
@@ -58,12 +62,21 @@ def set_ss():
 
 def pick_color():
     """
-    Uses the Tkinter color chooser to select a color value and convert to RGB
+    Uses the Tkinter color chooser to select a color value for the bar and convert to RGB
     """
     global config
     colors = askcolor(title="Color Chooser")
     if colors != None:
         config["color"] = list(ImageColor.getrgb(colors[1]))
+
+def pick_bg():
+    """
+    Uses the Tkinter color chooser to select a color value for the background and convert to RGB
+    """
+    global config
+    colors = askcolor(title="Color Chooser")
+    if colors != None:
+        app.bg_color = list(ImageColor.getrgb(colors[1]))
 
 def run():
     """
@@ -83,13 +96,19 @@ def run():
     else:
         config["size"] = [3840, 2160]
     
-    config["background"] = app.bg_path.cget('path')
+    if app.bg_color != None:
+        config["background"] = np.full((config["size"][1], config["size"][0], 3), app.bg_color, dtype=np.uint8)
+    else:
+        config["background"] = app.bg_path.cget('path')
+
     config["frame_rate"] = int(app.fps.get())
     config["width"] = int(app.width.get())
     config["separation"] = int(app.sep.get())
     config["SSAA"] = app.aa
     config["AISS"] = app.ss
+
     pos = app.pos.get()
+
     if pos == "Top":
         config["horizontal_bars"] = False
         config["inverted_bars"] = True

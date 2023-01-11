@@ -5,7 +5,6 @@ from multiprocessing import Pool
 import tomllib as tl
 from moviepy.editor import VideoFileClip, AudioFileClip
 from copy import deepcopy
-
 import Functions as F
 
 def render(config):
@@ -13,8 +12,14 @@ def render(config):
         config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
         config["width"] //= 2
         config["separation"] //= 2
-    background = cv2.imread(config["background"])
-    background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
+
+    if type(config["background"]) == str:
+        background = cv2.imread(config["background"])
+        background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
+    else:
+        background = config["background"]
+
+    print(background.dtype)
 
     fs_rate, signal = wavfile.read(config["FILE"])
     print ("Frequency sampling", fs_rate)
@@ -78,6 +83,7 @@ def render(config):
     audio = audio.subclip(0, length_in_seconds)
     final_clip = video.set_audio(audio)
     final_clip.write_videofile(f"{FILE}_Audio.mp4")
+    return
 
 if __name__ == "__main__":
     with open("config.toml", "rb") as f:

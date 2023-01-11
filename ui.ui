@@ -11,6 +11,9 @@
         <layout manager="pack">
           <property name="side">top</property>
         </layout>
+        <containerlayout manager="grid">
+          <property name="propagate">False</property>
+        </containerlayout>
         <child>
           <object class="ttk.Button" id="render" named="True">
             <property name="command" type="command" cbtype="simple">run</property>
@@ -30,13 +33,11 @@
           <object class="ttk.Entry" id="fps" named="True">
             <property name="justify">left</property>
             <property name="state">normal</property>
-            <property name="text" translatable="yes">Video Framerate</property>
-            <property name="textvariable">int:framerate</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="width">100</property>
-              <property name="x">145</property>
-              <property name="y">75</property>
+              <property name="width">75</property>
+              <property name="x">110</property>
+              <property name="y">175</property>
             </layout>
           </object>
         </child>
@@ -48,42 +49,40 @@
             <property name="values">720p 1080p 1440p 4K</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="width">134</property>
-              <property name="x">255</property>
-              <property name="y">75</property>
+              <property name="width">90</property>
+              <property name="x">300</property>
+              <property name="y">205</property>
             </layout>
           </object>
         </child>
         <child>
           <object class="ttk.Entry" id="bar_width" named="True">
             <property name="justify">left</property>
-            <property name="text" translatable="yes">Bar Width</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="x">10</property>
-              <property name="y">105</property>
+              <property name="width">115</property>
+              <property name="x">70</property>
+              <property name="y">145</property>
             </layout>
           </object>
         </child>
         <child>
           <object class="ttk.Entry" id="bar_sep" named="True">
-            <property name="text" translatable="yes">Bar Separation</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="width">100</property>
-              <property name="x">145</property>
-              <property name="y">105</property>
+              <property name="x">285</property>
+              <property name="y">145</property>
             </layout>
           </object>
         </child>
         <child>
           <object class="ttk.Entry" id="vid_length" named="True">
-            <property name="text" translatable="yes">Length (seconds)</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="width">135</property>
-              <property name="x">255</property>
-              <property name="y">105</property>
+              <property name="width">100</property>
+              <property name="x">285</property>
+              <property name="y">175</property>
             </layout>
           </object>
         </child>
@@ -93,8 +92,10 @@
             <property name="values">Bottom Top Left Right</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="x">200</property>
-              <property name="y">130</property>
+              <property name="relx">0.0</property>
+              <property name="width">100</property>
+              <property name="x">85</property>
+              <property name="y">205</property>
             </layout>
           </object>
         </child>
@@ -114,8 +115,8 @@
             <property name="type">file</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="width">305</property>
-              <property name="x">85</property>
+              <property name="width">270</property>
+              <property name="x">120</property>
               <property name="y">45</property>
             </layout>
           </object>
@@ -132,7 +133,7 @@
         </child>
         <child>
           <object class="ttk.Label" id="bg_img" named="True">
-            <property name="text" translatable="yes">Background:</property>
+            <property name="text" translatable="yes">Background Image:</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="x">10</property>
@@ -147,23 +148,23 @@
             <property name="variable">boolean:aa</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="x">10</property>
-              <property name="y">130</property>
+              <property name="x">140</property>
+              <property name="y">230</property>
             </layout>
           </object>
         </child>
         <child>
           <object class="ttk.Button" id="hex" named="True">
             <property name="command" type="command" cbtype="simple">pick_color</property>
-            <property name="text" translatable="yes">Select Color</property>
+            <property name="text" translatable="yes">Select Bar Color</property>
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="height">25</property>
               <property name="relwidth">0.0</property>
               <property name="relx">0.0</property>
-              <property name="width">125</property>
-              <property name="x">10</property>
-              <property name="y">73</property>
+              <property name="width">180</property>
+              <property name="x">210</property>
+              <property name="y">80</property>
             </layout>
           </object>
         </child>
@@ -175,7 +176,80 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="x">10</property>
-              <property name="y">155</property>
+              <property name="y">230</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label1">
+            <property name="text" translatable="yes">Bar Position:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">205</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label2">
+            <property name="text" translatable="yes">Video Resolution:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">200</property>
+              <property name="y">205</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label3">
+            <property name="text" translatable="yes">Video Framerate:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">175</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label4">
+            <property name="text" translatable="yes">Video Length:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">200</property>
+              <property name="y">175</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label5">
+            <property name="text" translatable="yes">Bar Width:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">145</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label6">
+            <property name="text" translatable="yes">Bar Separation:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">200</property>
+              <property name="y">145</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Button" id="button1">
+            <property name="command" type="command" cbtype="simple">pick_bg</property>
+            <property name="text" translatable="yes">Or Select Background Color</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="height">25</property>
+              <property name="width">190</property>
+              <property name="x">10</property>
+              <property name="y">80</property>
             </layout>
           </object>
         </child>
