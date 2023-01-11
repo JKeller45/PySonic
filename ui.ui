@@ -3,6 +3,7 @@
   <object class="tk.Toplevel" id="PySonic" named="True">
     <property name="geometry">400x300</property>
     <property name="height">200</property>
+    <property name="title" translatable="yes">PySonic</property>
     <property name="width">200</property>
     <child>
       <object class="ttk.Frame" id="frame1">
