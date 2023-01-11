@@ -15,11 +15,9 @@ def render(config):
 
     if type(config["background"]) == str:
         background = cv2.imread(config["background"])
-        background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
     else:
         background = config["background"]
-
-    print(background.dtype)
+    background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
 
     fs_rate, signal = wavfile.read(config["FILE"])
     print ("Frequency sampling", fs_rate)

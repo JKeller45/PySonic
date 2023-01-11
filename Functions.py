@@ -48,34 +48,34 @@ def draw_rect(output_image, xcoord, ycoord, config, height):
     return output_image
 
 def draw_bars(args):
-    backgroud, num_bars, heights, config = args
+    background, num_bars, heights, config = args
     #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     offset = 0
     if not config["inverted_bars"]:
         for i in range(num_bars):
             if config["horizontal_bars"]:
-                draw_rect(backgroud, 0, offset, config, heights[i] + 1)
+                draw_rect(background, 0, offset, config, heights[i] + 1)
             else:
-                draw_rect(backgroud, offset, config["size"][1] - 1, config, heights[i] + 1)
+                draw_rect(background, offset, config["size"][1] - 1, config, heights[i] + 1)
             offset += (config["width"] + config["separation"])
     else:
         for i in range(num_bars):
             if config["horizontal_bars"]:
-                draw_rect(backgroud, config["size"][1] - 1, offset, config, heights[i] + 1)
+                draw_rect(background, config["size"][1] - 1, offset, config, heights[i] + 1)
             else:
-                draw_rect(backgroud, offset, 0, config, heights[i] + 1)
+                draw_rect(background, offset, 0, config, heights[i] + 1)
             offset += (config["width"] + config["separation"])
     if config["SSAA"] or config["AISS"]:
         sr = cv2.dnn_superres.DnnSuperResImpl_create()
         path = "ESPCN_x2.pb"
         sr.readModel(path)
         sr.setModel("espcn", 2)
-        result = sr.upsample(backgroud)
-        backgroud = result
+        result = sr.upsample(background)
+        background = result
         if config["SSAA"]:
-            backgroud = np.array(im.fromarray(backgroud).resize((len(backgroud[0]) // 2, len(backgroud) // 2), resample=im.ANTIALIAS))
-        #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(backgroud, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
-    return backgroud
+            background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
+        #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
+    return background
 
 def bins(freq, amp, heights, num_bars, config):
     for c,v in enumerate(freq):

@@ -4,7 +4,7 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import pygubu
 from tkinter.colorchooser import askcolor
-from PIL import ImageColor
+from PIL import ImageColor, Image
 import numpy as np
 import cv2
 
@@ -15,6 +15,7 @@ config = {}
 
 class Application:
     def __init__(self, master=None):
+
         callbacks = {
                 'run': run,
                 'set_aa': set_aa,
@@ -76,7 +77,7 @@ def pick_bg():
     global config
     colors = askcolor(title="Color Chooser")
     if colors != None:
-        app.bg_color = list(ImageColor.getrgb(colors[1]))
+        app.bg_color = ImageColor.getrgb(colors[1])
 
 def run():
     """
@@ -97,7 +98,7 @@ def run():
         config["size"] = [3840, 2160]
     
     if app.bg_color != None:
-        config["background"] = np.full((config["size"][1], config["size"][0], 3), app.bg_color, dtype=np.uint8)
+        config["background"] = cv2.cvtColor(np.array(Image.new(mode="RGB", size=(config["size"][0], config["size"][1]), color=app.bg_color)), cv2.COLOR_RGB2BGR)
     else:
         config["background"] = app.bg_path.cget('path')
 
