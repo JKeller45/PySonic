@@ -9,6 +9,15 @@ import Functions as F
 import Classes
 
 def render(config, progress, main):
+    """
+    The main render function
+
+    Parameters
+    ----------
+    config (dict): the dictionary with all render settings
+    progress (ttk.Progressbar): the progress bar in the UI. Used for updating
+    main (tk.mainwindow): the main window. Used for refreshing the app
+    """
     if config["AISS"]:
         config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
         config["width"] //= 2

@@ -10,7 +10,7 @@ def plot_fft(freqs_side, FFT_side):
     Plots the FFT with matplotlib
 
     Parameters
-    -------
+    ----------
     freqs_side (np.ndarray): the descrete frequency steps
     FFT_side (np.ndarray): the amplitudes at each frequency step
     """
