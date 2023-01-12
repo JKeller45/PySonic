@@ -195,6 +195,6 @@ def add_height(heights, group, amp, angle, side, width):
         return
     heights[group] += amp * sin(radians(angle))
     if side == "left" or side == "middle":
-        add_height(heights, group - 1, amp, angle - 2 * width * log10(group + 1), "left", width)
+        add_height(heights, group - 1, amp, angle - width * log10(group + 1), "left", width)
     if side == "right" or side == "middle":
-        add_height(heights, group + 1, amp, angle - 2 * width * log10(group + 1), "right", width)
+        add_height(heights, group + 1, amp, angle - width * log10(group + 1), "right", width)
