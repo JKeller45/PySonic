@@ -3,7 +3,7 @@ title = "Temporary Config"
 [settings]
 FILE = "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav"
 length = 15
-size = [960, 540]
+size = [1920, 1080]
 color = [255, 255, 255]
 background = "C:/Users/james/Desktop/pexels-pixabay-417173.jpg"
 frame_rate = 30

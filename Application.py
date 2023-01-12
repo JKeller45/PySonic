@@ -68,7 +68,7 @@ def pick_color():
     """
     global config
     colors = askcolor(title="Color Chooser")
-    if colors != None:
+    if colors[1] != None:
         config["color"] = list(ImageColor.getrgb(colors[1]))
 
 def pick_bg():
@@ -77,7 +77,7 @@ def pick_bg():
     """
     global config
     colors = askcolor(title="Color Chooser")
-    if colors != None:
+    if colors[1] != None:
         app.bg_color = ImageColor.getrgb(colors[1])
 
 def run():

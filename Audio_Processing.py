@@ -20,7 +20,7 @@ def render(config, progress, main):
     """
     if config["AISS"]:
         config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
-        config["width"] //= 2
+        config["width"] = max(config["width"] // 2, 1)
         config["separation"] //= 2
 
     if type(config["background"]) == str:
