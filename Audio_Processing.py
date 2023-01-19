@@ -29,7 +29,16 @@ def render(config, progress, main):
         background = config["background"]
     background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
 
-    fs_rate, signal = wavfile.read(config["FILE"])
+    if config["FILE"][-4:] != ".wav":
+        if config["FILE"][-4:] == ".mp3":
+            raise IOError("MP3 File Support Is In The Works")
+            sound = AudioFileClip(config["FILE"])
+        else:
+            raise IOError("File Type Not Supproted")
+        fs_rate, signal = sound.fps, sound.to_soundarray()
+        print(signal)
+    else:
+        fs_rate, signal = wavfile.read(config["FILE"])
     print ("Frequency sampling", fs_rate)
     l_audio = len(signal.shape)
     if l_audio == 2:
