@@ -58,6 +58,8 @@ def render(config, progress, main):
         num_bars = config["size"][0] // (config["width"] + config["separation"])
     if num_bars >= config["size"][0]:
         num_bars = config["size"][0] - 1
+    if config["circle"]:
+        num_bars = 360
     ffts = []
 
     length_in_seconds = config["length"]
@@ -86,9 +88,15 @@ def render(config, progress, main):
         for n in ffts:
             heights.append(F.bins(n[0], n[1], np.ones(num_bars), num_bars, config))
         for c,n in enumerate(ffts):
-            args.append((deepcopy(background), num_bars, heights[c], config))
-        with Pool(processes=10) as pool:
-            output = pool.map(F.draw_bars, args)
+                args.append((deepcopy(background), num_bars, heights[c], config))
+
+        if not config["circle"]:
+            with Pool(processes=10) as pool:
+                output = pool.map(F.draw_bars, args)
+        else:
+            with Pool(processes=10) as pool:
+                output = pool.map(F.draw_circle, args)
+                
         args = []
 
         for _,f in enumerate(output):

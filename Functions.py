@@ -1,7 +1,7 @@
 import scipy.fftpack as fftp
 import numpy as np
 from matplotlib import pyplot as plt
-from math import log10, sin, radians
+import math
 import cv2
 from PIL import Image as im
 
@@ -160,8 +160,8 @@ def bins(freq, amp, heights, num_bars, config):
     for c,v in enumerate(freq):
         if v == 0:
             continue
-        freq[c] = log10(v)
-    bins = np.linspace(log10(50),log10(20000),num_bars)
+        freq[c] = math.log10(v)
+    bins = np.linspace(math.log10(50),math.log10(20000),num_bars)
     for c,_ in enumerate(bins):
         if c == 0:
             continue
@@ -193,8 +193,25 @@ def add_height(heights, group, amp, angle, side, width):
     """
     if angle <= 0 or group < 0 or group >= len(heights):
         return
-    heights[group] += amp * sin(radians(angle))
+    heights[group] += amp * math.sin(math.radians(angle))
     if side == "left" or side == "middle":
-        add_height(heights, group - 1, amp, angle - width * log10(group + 1), "left", width)
+        add_height(heights, group - 1, amp, angle - width * math.log10(group + 1), "left", width)
     if side == "right" or side == "middle":
-        add_height(heights, group + 1, amp, angle - width * log10(group + 1), "right", width)
+        add_height(heights, group + 1, amp, angle - width * math.log10(group + 1), "right", width)
+
+def get_coords(x, y, angle, length):
+    x_length = length * math.cos(angle)
+    y_length = length * math.sin(angle)
+    end_x = int(x + x_length)
+    end_y = int(y + y_length)
+    return end_x, end_y
+
+def draw_ray(output_image, x, y, height, angle, config):
+    output_image = cv2.line(output_image, (x,y), get_coords(x, y, angle, height), config["color"], 2)
+    return output_image
+
+def draw_circle(args):
+    background, num_bars, heights, config = args
+    for angle in range(360):
+        background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], math.radians(angle), config)
+    return background
