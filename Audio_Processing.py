@@ -31,7 +31,7 @@ def render(config, progress, main):
 
     if config["FILE"][-4:] != ".wav":
         if config["FILE"][-4:] == ".mp3":
-            raise IOError("MP3 File Support Is In The Works")
+            raise IOError("MP3 File Support Is In The Works") # Temp
             sound = AudioFileClip(config["FILE"])
         else:
             raise IOError("File Type Not Supproted")
