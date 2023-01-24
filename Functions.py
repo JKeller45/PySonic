@@ -83,18 +83,19 @@ def draw_rect(output_image, xcoord, ycoord, config, height):
     -------
     output_image (np.ndarray): the image with the rectangle drawn over it
     """
-    for y in range(int(height)):
-        for x in range(config["width"]):
-            if config["horizontal_bars"]:
-                if config["inverted_bars"]:
-                    output_image[ycoord + x][xcoord - y] = config["color"]
-                else:
-                    output_image[ycoord + x][xcoord + y] = config["color"]
-            else:
-                if config["inverted_bars"]:
-                    output_image[ycoord + y][xcoord + x] = config["color"]
-                else:
-                    output_image[ycoord - y][xcoord + x] = config["color"]
+    xcoord = int(xcoord)
+    ycoord = int(ycoord)
+    height = int(height)
+
+    if config["inverted_bars"] and config["horizontal_bars"]:
+        output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord - height, ycoord + config["width"]), config["color"], -1)
+    elif not config["inverted_bars"] and config["horizontal_bars"]:
+        output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + height, ycoord + config["width"]), config["color"], -1)
+    elif config["inverted_bars"] and not config["horizontal_bars"]:
+        output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + config["width"], ycoord + height), config["color"], -1)
+    else:
+        output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + config["width"], ycoord - height), config["color"], -1)
+
     return output_image
 
 def draw_bars(args):
@@ -115,20 +116,17 @@ def draw_bars(args):
     background, num_bars, heights, config = args
     #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     offset = 0
-    if not config["inverted_bars"]:
-        for i in range(num_bars):
-            if config["horizontal_bars"]:
-                draw_rect(background, 0, offset, config, heights[i] + 1)
-            else:
-                draw_rect(background, offset, config["size"][1] - 1, config, heights[i] + 1)
-            offset += (config["width"] + config["separation"])
-    else:
-        for i in range(num_bars):
-            if config["horizontal_bars"]:
-                draw_rect(background, config["size"][1] - 1, offset, config, heights[i] + 1)
-            else:
-                draw_rect(background, offset, 0, config, heights[i] + 1)
-            offset += (config["width"] + config["separation"])
+    for i in range(num_bars):
+        if config["inverted_bars"] and config["horizontal_bars"]:
+            draw_rect(background, config["size"][0] - 1, offset, config, heights[i] + 1)
+        if config["inverted_bars"] and not config["horizontal_bars"]:
+            draw_rect(background, offset, 0, config, heights[i] + 1)
+        if not config["inverted_bars"] and config["horizontal_bars"]:
+            draw_rect(background, 0, offset, config, heights[i] + 1)
+        if not config["inverted_bars"] and not config["horizontal_bars"]:
+            draw_rect(background, offset, config["size"][1] - 1, config, heights[i] + 1)
+        offset += (config["width"] + config["separation"])
+
     if config["SSAA"] or config["AISS"]:
         sr = cv2.dnn_superres.DnnSuperResImpl_create()
         path = "ESPCN_x2.pb"
