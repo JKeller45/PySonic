@@ -169,9 +169,9 @@ def bins(freq, amp, heights, num_bars, config):
             if f > bins[c]:
                 break
             if config["circle"]:
-                add_height(heights, c, amp[i], 90, "middle", config["width"], lambda angle: math.sin(math.radians(angle)))
+                add_height(heights, c, amp[i], 90, "middle", config["width"], lambda amp, angle: amp - (amp * .05), config)
             else:
-                add_height(heights, c, amp[i], 90, "middle", config["width"], lambda angle: math.sin(math.radians(angle)))
+                add_height(heights, c, amp[i], 90, "middle", config["width"], lambda amp, angle: amp * math.sin(math.radians(angle)), config)
     heights = heights / 1_000_000_000
     heights = heights * (config["frame_rate"] // 30)
     heights = heights * (config["size"][1] / 1080)
@@ -179,7 +179,7 @@ def bins(freq, amp, heights, num_bars, config):
         heights = heights / (max(heights) / 300)
     return heights
 
-def add_height(heights, group, amp, angle, side, width, damping):
+def add_height(heights, group, amp, angle, side, width, damping, config):
     """
     Uses a sinoidal decay to add height to adjacent bars to give a more natural, non blocky, look to each frame.
 
@@ -192,13 +192,17 @@ def add_height(heights, group, amp, angle, side, width, damping):
     side (str): whether its on the right or left side of the initial point. Used for recursion.
     width (int): the width of each bar. Used for scaling the decay.
     """
-    if angle <= 0 or group < 0 or group >= len(heights):
+    if angle <= 0 or group < 0 or group >= len(heights) or amp <= 0:
         return
-    heights[group] += amp * damping(angle)
+    heights[group] += amp
+    if config["circle"]:
+        ang = angle
+    else:
+        ang = angle - width * math.log10(group + 1)
     if side == "left" or side == "middle":
-        add_height(heights, group - 1, amp, angle - width * math.log10(group + 1), "left", width, damping)
+        add_height(heights, group - 1, damping(amp, angle), ang, "left", width, damping, config)
     if side == "right" or side == "middle":
-        add_height(heights, group + 1, amp, angle - width * math.log10(group + 1), "right", width, damping)
+        add_height(heights, group + 1, damping(amp, angle), ang, "right", width, damping, config)
 
 def get_coords(x, y, angle, length):
     x_length = length * math.cos(angle)
@@ -207,13 +211,13 @@ def get_coords(x, y, angle, length):
     end_y = int(y + y_length)
     return end_x, end_y
 
-def draw_ray(output_image, x, y, height, angle, config):
-    output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / 3), 80), get_coords(x, y, math.radians(angle / 3), height), config["color"], 4)
+def draw_ray(output_image, x, y, height, angle, num_bars, config):
+    output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / (num_bars / 360)), 80), get_coords(x, y, math.radians(angle / (num_bars / 360)), height), config["color"], 8)
     return output_image
 
 def draw_circle(args):
     background, num_bars, heights, config = args
     background = cv2.circle(background, (config["size"][0] // 2, config["size"][1] // 2), 80, config["color"], -1)
     for angle in range(num_bars):
-        background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], angle, config)
+        background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], angle, num_bars, config)
     return background
