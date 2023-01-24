@@ -168,7 +168,10 @@ def bins(freq, amp, heights, num_bars, config):
                 continue
             if f > bins[c]:
                 break
-            add_height(heights, c, amp[i], 90, "middle", config["width"])
+            if config["circle"]:
+                add_height(heights, c, amp[i], 90, "middle", config["width"], lambda angle: math.sin(math.radians(angle)))
+            else:
+                add_height(heights, c, amp[i], 90, "middle", config["width"], lambda angle: math.sin(math.radians(angle)))
     heights = heights / 1_000_000_000
     heights = heights * (config["frame_rate"] // 30)
     heights = heights * (config["size"][1] / 1080)
@@ -176,7 +179,7 @@ def bins(freq, amp, heights, num_bars, config):
         heights = heights / (max(heights) / 300)
     return heights
 
-def add_height(heights, group, amp, angle, side, width):
+def add_height(heights, group, amp, angle, side, width, damping):
     """
     Uses a sinoidal decay to add height to adjacent bars to give a more natural, non blocky, look to each frame.
 
@@ -191,11 +194,11 @@ def add_height(heights, group, amp, angle, side, width):
     """
     if angle <= 0 or group < 0 or group >= len(heights):
         return
-    heights[group] += amp * math.sin(math.radians(angle))
+    heights[group] += amp * damping(angle)
     if side == "left" or side == "middle":
-        add_height(heights, group - 1, amp, angle - width * math.log10(group + 1), "left", width)
+        add_height(heights, group - 1, amp, angle - width * math.log10(group + 1), "left", width, damping)
     if side == "right" or side == "middle":
-        add_height(heights, group + 1, amp, angle - width * math.log10(group + 1), "right", width)
+        add_height(heights, group + 1, amp, angle - width * math.log10(group + 1), "right", width, damping)
 
 def get_coords(x, y, angle, length):
     x_length = length * math.cos(angle)
@@ -205,11 +208,12 @@ def get_coords(x, y, angle, length):
     return end_x, end_y
 
 def draw_ray(output_image, x, y, height, angle, config):
-    output_image = cv2.line(output_image, (x,y), get_coords(x, y, angle, height), config["color"], 2)
+    output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / 3), 80), get_coords(x, y, math.radians(angle / 3), height), config["color"], 4)
     return output_image
 
 def draw_circle(args):
     background, num_bars, heights, config = args
-    for angle in range(1080):
-        background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], math.radians(angle / 3), config)
+    background = cv2.circle(background, (config["size"][0] // 2, config["size"][1] // 2), 80, config["color"], -1)
+    for angle in range(num_bars):
+        background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], angle, config)
     return background
