@@ -210,6 +210,6 @@ def draw_ray(output_image, x, y, height, angle, config):
 
 def draw_circle(args):
     background, num_bars, heights, config = args
-    for angle in range(360):
-        background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], math.radians(angle), config)
+    for angle in range(1080):
+        background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], math.radians(angle / 3), config)
     return background

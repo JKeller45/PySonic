@@ -14,4 +14,4 @@ horizontal_bars = false
 inverted_bars = false
 SSAA = false
 AISS = false
-circle = false
+circle = true

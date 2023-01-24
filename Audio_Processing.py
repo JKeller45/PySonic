@@ -59,7 +59,7 @@ def render(config, progress, main):
     if num_bars >= config["size"][0]:
         num_bars = config["size"][0] - 1
     if config["circle"]:
-        num_bars = 360
+        num_bars = 1080
     ffts = []
 
     length_in_seconds = config["length"]
