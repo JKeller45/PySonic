@@ -212,12 +212,12 @@ def get_coords(x, y, angle, length):
     return end_x, end_y
 
 def draw_ray(output_image, x, y, height, angle, num_bars, config):
-    output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / (num_bars / 360)), 80), get_coords(x, y, math.radians(angle / (num_bars / 360)), height), config["color"], 8)
+    output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / (num_bars / 360)), 80), get_coords(x, y, math.radians(angle / (num_bars / 360)), height), config["color"], 6)
     return output_image
 
 def draw_circle(args):
     background, num_bars, heights, config = args
     background = cv2.circle(background, (config["size"][0] // 2, config["size"][1] // 2), 80, config["color"], -1)
-    for angle in range(num_bars):
+    for angle in range(-90, num_bars - 90):
         background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], angle, num_bars, config)
     return background
