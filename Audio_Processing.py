@@ -7,7 +7,7 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 from copy import deepcopy
 import Functions as F
 import Classes
-
+        
 def render(config, progress, main):
     """
     The main render function
@@ -52,13 +52,16 @@ def render(config, progress, main):
     curr_step = num_frames
     prev_step = 0
 
+    if config["wave"]:
+        config["separation"] = 0
+        config["width"] = 1
     if config["horizontal_bars"]:
         num_bars = config["size"][1] // (config["width"] + config["separation"])
     else:
         num_bars = config["size"][0] // (config["width"] + config["separation"])
     if num_bars >= config["size"][0]:
         num_bars = config["size"][0] - 1
-    if config["circle"]:
+    if config["solar"]:
         num_bars = 360
     ffts = []
 
@@ -71,7 +74,7 @@ def render(config, progress, main):
         result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
     FILE = config["FILE"]
 
-    loops = length_in_frames // 300  + 5
+    loops = length_in_frames // 300 + 6
     for _ in range(loops):
         args = []
         for n in range(int(length_in_frames / loops)):
@@ -89,12 +92,13 @@ def render(config, progress, main):
             heights.append(F.bins(n[0], n[1], np.ones(num_bars), num_bars, config))
         for c,n in enumerate(ffts):
                 args.append((deepcopy(background), num_bars, heights[c], config))
-        if not config["circle"]:
-            with Pool(processes=10) as pool:
-                output = pool.map(F.draw_bars, args)
-        else:
-            with Pool(processes=10) as pool:
+        with Pool(processes=10) as pool:
+            if config["solar"]:
                 output = pool.map(F.draw_circle, args)
+            elif config["wave"]:
+                output = pool.map(F.draw_wave, args)
+            else:
+                output = pool.map(F.draw_bars, args)
         args = []
 
         for _,f in enumerate(output):

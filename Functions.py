@@ -168,7 +168,7 @@ def bins(freq, amp, heights, num_bars, config):
                 continue
             if f > bins[c]:
                 break
-            if config["circle"]:
+            if config["solar"]:
                 add_height(heights, c, amp[i], 90, "middle", config["width"], lambda amp, angle: amp - (amp * .05), config)
             else:
                 add_height(heights, c, amp[i], 90, "middle", config["width"], lambda amp, angle: amp * math.sin(math.radians(angle)), config)
@@ -195,7 +195,7 @@ def add_height(heights, group, amp, angle, side, width, damping, config):
     if angle <= 0 or group < 0 or group >= len(heights) or amp <= 0:
         return
     heights[group] += amp
-    if config["circle"]:
+    if config["solar"]:
         ang = angle
     else:
         ang = angle - width * math.log10(group + 1)
@@ -221,3 +221,60 @@ def draw_circle(args):
     for angle in range(-90, num_bars - 90):
         background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], angle, num_bars, config)
     return background
+
+def draw_wave(args):
+    background, num_bars, heights, config = args
+    #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
+    offset = 0
+
+    if config["inverted_bars"] and config["horizontal_bars"]:
+        last_coord = (int((config["size"][0] - 1) - (heights[1] + 1)), int(offset))
+    elif config["inverted_bars"] and not config["horizontal_bars"]:
+        last_coord = (int(offset + (heights[1] + 1)), 0)
+    elif not config["inverted_bars"] and config["horizontal_bars"]:
+        last_coord = (0, int(offset + (heights[1] + 1)))
+    elif not config["inverted_bars"] and not config["horizontal_bars"]:
+        last_coord = (offset, int((config["size"][1] - 1) - (heights[1] + 1)))
+
+    for i in range(num_bars):
+        if config["inverted_bars"] and config["horizontal_bars"]:
+            last_coord = draw_wave_segment(background, config["size"][0] - 1, offset, config, heights[i] + 1, last_coord)
+        elif config["inverted_bars"] and not config["horizontal_bars"]:
+            last_coord = draw_wave_segment(background, offset, 0, config, heights[i] + 1, last_coord)
+        elif not config["inverted_bars"] and config["horizontal_bars"]:
+            last_coord = draw_wave_segment(background, 0, offset, config, heights[i] + 1, last_coord)
+        elif not config["inverted_bars"] and not config["horizontal_bars"]:
+            last_coord = draw_wave_segment(background, offset, config["size"][1] - 1, config, heights[i] + 1, last_coord)
+        offset += (config["width"] + config["separation"])
+
+    if config["SSAA"] or config["AISS"]:
+        sr = cv2.dnn_superres.DnnSuperResImpl_create()
+        path = "ESPCN_x2.pb"
+        sr.readModel(path)
+        sr.setModel("espcn", 2)
+        result = sr.upsample(background)
+        background = result
+        if config["SSAA"]:
+            background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
+        #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
+    return background
+
+def draw_wave_segment(output_image, xcoord, ycoord, config, height, last_coord):
+    xcoord = int(xcoord)
+    ycoord = int(ycoord)
+    height = int(height)
+
+    if config["inverted_bars"] and config["horizontal_bars"]:
+        output_image = cv2.line(output_image, last_coord, (xcoord - height, ycoord + config["width"]), config["color"], 2)
+        last_coord = (xcoord - height, ycoord + config["width"])
+    elif not config["inverted_bars"] and config["horizontal_bars"]:
+        output_image = cv2.line(output_image, last_coord, (xcoord + height, ycoord + config["width"]), config["color"], 2)
+        last_coord = (xcoord + height, ycoord + config["width"])
+    elif config["inverted_bars"] and not config["horizontal_bars"]:
+        output_image = cv2.line(output_image, last_coord, (xcoord + config["width"], ycoord + height), config["color"], 2)
+        last_coord = (xcoord + config["width"], ycoord + height)
+    else:
+        output_image = cv2.line(output_image, last_coord, (xcoord + config["width"], ycoord - height), config["color"], 2)
+        last_coord = (xcoord + config["width"], ycoord - height)
+
+    return last_coord

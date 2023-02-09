@@ -44,6 +44,7 @@ class Application:
         self.ssaa = builder.get_object('ssaa')
         self.pos = builder.get_object("pos")
         self.progress = builder.get_object("progress")
+        self.bar_type = builder.get_object("bar_type")
 
         builder.connect_callbacks(callbacks)
 
@@ -123,7 +124,17 @@ def run():
     elif pos == "Right":
         config["horizontal_bars"] = True
         config["inverted_bars"] = True
-    config["interpolation"] = False
+    
+    bar_type = app.bar_type.get()
+    if bar_type == "Solar":
+        config["solar"] = True
+        config["wave"] = False
+    elif bar_type == "Wave":
+        config["wave"] = True
+        config["solar"] = False
+    else:
+        config["wave"] = False
+        config["solar"] = False
 
     render(config, app.progress, app.mainwindow)
 
