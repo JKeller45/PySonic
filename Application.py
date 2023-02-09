@@ -71,6 +71,7 @@ def pick_color():
     colors = askcolor(title="Color Chooser")
     if colors[1] != None:
         config["color"] = list(ImageColor.getrgb(colors[1]))
+        config["color"].reverse()
 
 def pick_bg():
     """

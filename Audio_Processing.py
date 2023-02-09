@@ -115,6 +115,9 @@ def render(config, progress, main):
     audio = audio.subclip(0, length_in_seconds)
     final_clip = video.set_audio(audio)
     final_clip.write_videofile(f"{FILE}_Audio.mp4")
+    
+    progress.step(100)
+    main.update()
     return
 
 if __name__ == "__main__":
