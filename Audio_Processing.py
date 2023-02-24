@@ -74,7 +74,7 @@ def render(config, progress, main):
         result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
     FILE = config["FILE"]
 
-    loops = length_in_frames // 300 + 6
+    loops = length_in_frames // 300 + 8
     for _ in range(loops):
         args = []
         for n in range(int(length_in_frames / loops)):

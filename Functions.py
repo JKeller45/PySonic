@@ -224,7 +224,7 @@ def draw_circle(args):
 
 def draw_wave(args):
     background, num_bars, heights, config = args
-    #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
+    #transparent = np.zeros((len(background), len(background[0]), 4))
     offset = 0
 
     if config["inverted_bars"] and config["horizontal_bars"]:
@@ -256,7 +256,6 @@ def draw_wave(args):
         background = result
         if config["SSAA"]:
             background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
-        #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
     return background
 
 def draw_wave_segment(output_image, xcoord, ycoord, config, height, last_coord):
@@ -276,5 +275,4 @@ def draw_wave_segment(output_image, xcoord, ycoord, config, height, last_coord):
     else:
         output_image = cv2.line(output_image, last_coord, (xcoord + config["width"], ycoord - height), config["color"], 2)
         last_coord = (xcoord + config["width"], ycoord - height)
-
     return last_coord
