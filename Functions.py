@@ -87,13 +87,13 @@ def draw_rect(output_image, xcoord, ycoord, config, height):
     ycoord = int(ycoord)
     height = int(height)
 
-    if config["inverted_bars"] and config["horizontal_bars"]:
+    if config["position"] == "Right":
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord - height, ycoord + config["width"]), config["color"], -1)
-    elif not config["inverted_bars"] and config["horizontal_bars"]:
+    elif config["position"] == "Left":
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + height, ycoord + config["width"]), config["color"], -1)
-    elif config["inverted_bars"] and not config["horizontal_bars"]:
+    elif config["position"] == "Top":
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + config["width"], ycoord + height), config["color"], -1)
-    else:
+    elif config["position"] == "Bottom":
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + config["width"], ycoord - height), config["color"], -1)
 
     return output_image
@@ -117,13 +117,13 @@ def draw_bars(args):
     #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     offset = 0
     for i in range(num_bars):
-        if config["inverted_bars"] and config["horizontal_bars"]:
+        if config["position"] == "Right":
             draw_rect(background, config["size"][0] - 1, offset, config, heights[i] + 1)
-        if config["inverted_bars"] and not config["horizontal_bars"]:
+        elif config["position"] == "Top":
             draw_rect(background, offset, 0, config, heights[i] + 1)
-        if not config["inverted_bars"] and config["horizontal_bars"]:
+        elif config["position"] == "Left":
             draw_rect(background, 0, offset, config, heights[i] + 1)
-        if not config["inverted_bars"] and not config["horizontal_bars"]:
+        elif config["position"] == "Bottom":
             draw_rect(background, offset, config["size"][1] - 1, config, heights[i] + 1)
         offset += (config["width"] + config["separation"])
 
@@ -227,23 +227,23 @@ def draw_wave(args):
     #transparent = np.zeros((len(background), len(background[0]), 4))
     offset = 0
 
-    if config["inverted_bars"] and config["horizontal_bars"]:
+    if config["position"] == "Right":
         last_coord = (int((config["size"][0] - 1) - (heights[1] + 1)), int(offset))
-    elif config["inverted_bars"] and not config["horizontal_bars"]:
+    elif config["position"] == "Top":
         last_coord = (int(offset + (heights[1] + 1)), 0)
-    elif not config["inverted_bars"] and config["horizontal_bars"]:
+    elif config["position"] == "Left":
         last_coord = (0, int(offset + (heights[1] + 1)))
-    elif not config["inverted_bars"] and not config["horizontal_bars"]:
+    elif config["position"] == "Bottom":
         last_coord = (offset, int((config["size"][1] - 1) - (heights[1] + 1)))
 
     for i in range(num_bars):
-        if config["inverted_bars"] and config["horizontal_bars"]:
+        if config["position"] == "Right":
             last_coord = draw_wave_segment(background, config["size"][0] - 1, offset, config, heights[i] + 1, last_coord)
-        elif config["inverted_bars"] and not config["horizontal_bars"]:
+        elif config["position"] == "Top":
             last_coord = draw_wave_segment(background, offset, 0, config, heights[i] + 1, last_coord)
-        elif not config["inverted_bars"] and config["horizontal_bars"]:
+        elif config["position"] == "Left":
             last_coord = draw_wave_segment(background, 0, offset, config, heights[i] + 1, last_coord)
-        elif not config["inverted_bars"] and not config["horizontal_bars"]:
+        elif config["position"] == "Bottom":
             last_coord = draw_wave_segment(background, offset, config["size"][1] - 1, config, heights[i] + 1, last_coord)
         offset += (config["width"] + config["separation"])
 
@@ -263,16 +263,16 @@ def draw_wave_segment(output_image, xcoord, ycoord, config, height, last_coord):
     ycoord = int(ycoord)
     height = int(height)
 
-    if config["inverted_bars"] and config["horizontal_bars"]:
+    if config["position"] == "Right":
         output_image = cv2.line(output_image, last_coord, (xcoord - height, ycoord + config["width"]), config["color"], 2)
         last_coord = (xcoord - height, ycoord + config["width"])
-    elif not config["inverted_bars"] and config["horizontal_bars"]:
+    elif config["position"] == "Left":
         output_image = cv2.line(output_image, last_coord, (xcoord + height, ycoord + config["width"]), config["color"], 2)
         last_coord = (xcoord + height, ycoord + config["width"])
-    elif config["inverted_bars"] and not config["horizontal_bars"]:
+    elif config["position"] == "Top":
         output_image = cv2.line(output_image, last_coord, (xcoord + config["width"], ycoord + height), config["color"], 2)
         last_coord = (xcoord + config["width"], ycoord + height)
-    else:
+    elif config["position"] == "Bottom":
         output_image = cv2.line(output_image, last_coord, (xcoord + config["width"], ycoord - height), config["color"], 2)
         last_coord = (xcoord + config["width"], ycoord - height)
     return last_coord

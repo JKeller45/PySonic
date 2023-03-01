@@ -55,7 +55,7 @@ def render(config, progress, main):
     if config["wave"]:
         config["separation"] = 0
         config["width"] = 1
-    if config["horizontal_bars"]:
+    if config["position"] == "Left" or config["position"] == "Right":
         num_bars = config["size"][1] // (config["width"] + config["separation"])
     else:
         num_bars = config["size"][0] // (config["width"] + config["separation"])

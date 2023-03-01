@@ -7,6 +7,7 @@ from tkinter.colorchooser import askcolor
 from PIL import ImageColor, Image
 import numpy as np
 import cv2
+from multiprocessing import freeze_support
 
 PROJECT_PATH = pathlib.Path(__file__).parent
 PROJECT_UI = PROJECT_PATH / "ui.ui"
@@ -113,18 +114,7 @@ def run():
 
     pos = app.pos.get()
 
-    if pos == "Top":
-        config["horizontal_bars"] = False
-        config["inverted_bars"] = True
-    elif pos == "Bottom":
-        config["horizontal_bars"] = False
-        config["inverted_bars"] = False
-    elif pos == "Left":
-        config["horizontal_bars"] = True
-        config["inverted_bars"] = False
-    elif pos == "Right":
-        config["horizontal_bars"] = True
-        config["inverted_bars"] = True
+    config["position"] = pos
     
     bar_type = app.bar_type.get()
     if bar_type == "Solar":
@@ -140,5 +130,6 @@ def run():
     render(config, app.progress, app.mainwindow)
 
 if __name__ == '__main__':
+    freeze_support()
     app = Application()
     app.run()
