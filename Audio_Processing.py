@@ -7,6 +7,7 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 from copy import deepcopy
 import Functions as F
 import Classes
+import logging
         
 def render(config, progress, main):
     """
@@ -18,6 +19,7 @@ def render(config, progress, main):
     progress (ttk.Progressbar): the progress bar in the UI. Used for updating
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
+    logging.basicConfig(filename='log.log', level=logging.WARNING)
     if config["AISS"]:
         config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
         config["width"] = max(config["width"] // 2, 1)
@@ -109,12 +111,15 @@ def render(config, progress, main):
         progress.step(100 // loops)
         main.update()
         
-    result.release()
-    video = VideoFileClip(f"{FILE}.mp4")
-    audio = AudioFileClip(FILE)
-    audio = audio.subclip(0, length_in_seconds)
-    final_clip = video.set_audio(audio)
-    final_clip.write_videofile(f"{FILE}_Audio.mp4")
+    try:
+        result.release()
+        video = VideoFileClip(f"{FILE}.mp4")
+        audio = AudioFileClip(FILE)
+        audio = audio.subclip(0, length_in_seconds)
+        final_clip = video.set_audio(audio)
+        final_clip.write_videofile(f"{FILE}_Audio.mp4", logger=None)
+    except Exception as e:
+        logging.error("Exception occurred", exc_info=True)
     
     progress.step(100)
     main.update()

@@ -4,6 +4,12 @@ from matplotlib import pyplot as plt
 import math
 import cv2
 from PIL import Image as im
+import sys, os
+
+def find_by_relative_path(relative_path):
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(
+        os.path.abspath(__file__)))
+    return os.path.join(base_path, relative_path)
 
 def plot_fft(freqs_side, FFT_side):
     """
@@ -129,7 +135,7 @@ def draw_bars(args):
 
     if config["SSAA"] or config["AISS"]:
         sr = cv2.dnn_superres.DnnSuperResImpl_create()
-        path = "ESPCN_x2.pb"
+        path = find_by_relative_path("ESPCN_x2.pb")
         sr.readModel(path)
         sr.setModel("espcn", 2)
         result = sr.upsample(background)
@@ -249,7 +255,7 @@ def draw_wave(args):
 
     if config["SSAA"] or config["AISS"]:
         sr = cv2.dnn_superres.DnnSuperResImpl_create()
-        path = "ESPCN_x2.pb"
+        path = find_by_relative_path("ESPCN_x2.pb")
         sr.readModel(path)
         sr.setModel("espcn", 2)
         result = sr.upsample(background)
