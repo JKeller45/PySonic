@@ -136,7 +136,10 @@ def render(config, progress, main):
         flatten_list = lambda y:[x for a in y for x in flatten_list(a)] if type(y) is list else [y]
         output = flatten_list(output)
 
-        
+        for _,f in enumerate(output):
+            result.write(f)
+        output = []
+        ffts = []
 
         progress.step(100 // loops)
         main.update()
