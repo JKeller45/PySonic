@@ -133,7 +133,7 @@ def draw_bars(args):
     #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     offset = 0
 
-    background = deepcopy(config["background"])
+    background = config["background"]
 
     if config["use_gpu"]:
         background = cv2.UMat(background)
@@ -248,7 +248,7 @@ def draw_ray(output_image, x, y, height, angle, num_bars, config):
 def draw_circle(args):
     num_bars, heights, config = args
 
-    background = deepcopy(config["background"])
+    background = config["background"]
 
     if config["use_gpu"]:
         background = cv2.UMat(background)
@@ -282,7 +282,7 @@ def draw_wave(args):
     #transparent = np.zeros((len(background), len(background[0]), 4))
     offset = 0
 
-    background = deepcopy(config["background"])
+    background = config["background"]
 
     if config["use_gpu"]:
         background = cv2.UMat(background)

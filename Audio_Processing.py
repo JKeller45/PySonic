@@ -165,6 +165,10 @@ if __name__ == "__main__":
     from time import perf_counter
     start = perf_counter()
     render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
+    middle = perf_counter()
+    config["use_gpu"] = False
+    render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
     end = perf_counter()
 
-    print(f"Wall time: {end-start}")
+    print(f"GPU: {middle-start}")
+    print(f"CPU: {end-middle}")
