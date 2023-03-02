@@ -5,10 +5,21 @@ import math
 import cv2
 from PIL import Image as im
 import sys, os
+from copy import deepcopy
 
 def find_by_relative_path(relative_path):
-    base_path = getattr(sys, '_MEIPASS', os.path.dirname(
-        os.path.abspath(__file__)))
+    """
+    Finds the location of the DNN models when compiled
+
+    Parameters
+    ----------
+    relative_path (str): the path in the file system before compilation
+
+    Returns
+    -------
+    (str): the adjusted path after compilation
+    """
+    base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
 
 def plot_fft(freqs_side, FFT_side):
@@ -101,7 +112,6 @@ def draw_rect(output_image, xcoord, ycoord, config, height):
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + config["width"], ycoord + height), config["color"], -1)
     elif config["position"] == "Bottom":
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + config["width"], ycoord - height), config["color"], -1)
-
     return output_image
 
 def draw_bars(args):
@@ -119,9 +129,15 @@ def draw_bars(args):
     -------
     background (np.ndarray): the final frame with all bars drawn over its
     """
-    background, num_bars, heights, config = args
+    num_bars, heights, config = args
     #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     offset = 0
+
+    background = deepcopy(config["background"])
+
+    if config["use_gpu"]:
+        background = cv2.UMat(background)
+
     for i in range(num_bars):
         if config["position"] == "Right":
             draw_rect(background, config["size"][0] - 1, offset, config, heights[i] + 1)
@@ -137,11 +153,19 @@ def draw_bars(args):
         sr = cv2.dnn_superres.DnnSuperResImpl_create()
         path = find_by_relative_path("ESPCN_x2.pb")
         sr.readModel(path)
+        if config["use_gpu"]:
+            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+        else:
+            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
         sr.setModel("espcn", 2)
         result = sr.upsample(background)
         background = result
-        if config["SSAA"]:
-            background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
+
+    if config["use_gpu"]:
+        background = cv2.UMat.get(background)
+
+    if config["SSAA"]:
+        background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
         #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
     return background
 
@@ -222,16 +246,46 @@ def draw_ray(output_image, x, y, height, angle, num_bars, config):
     return output_image
 
 def draw_circle(args):
-    background, num_bars, heights, config = args
+    num_bars, heights, config = args
+
+    background = deepcopy(config["background"])
+
+    if config["use_gpu"]:
+        background = cv2.UMat(background)
+
     background = cv2.circle(background, (config["size"][0] // 2, config["size"][1] // 2), 80, config["color"], -1)
     for angle in range(-90, num_bars - 90):
         background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], angle, num_bars, config)
+
+    if config["SSAA"] or config["AISS"]:
+        sr = cv2.dnn_superres.DnnSuperResImpl_create()
+        path = find_by_relative_path("ESPCN_x2.pb")
+        sr.readModel(path)
+        if config["use_gpu"]:
+            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+        else:
+            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+        sr.setModel("espcn", 2)
+        result = sr.upsample(background)
+        background = result
+
+    if config["use_gpu"]:
+        background = cv2.UMat.get(background)
+
+    if config["SSAA"]:
+        background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
+
     return background
 
 def draw_wave(args):
-    background, num_bars, heights, config = args
+    num_bars, heights, config = args
     #transparent = np.zeros((len(background), len(background[0]), 4))
     offset = 0
+
+    background = deepcopy(config["background"])
+
+    if config["use_gpu"]:
+        background = cv2.UMat(background)
 
     if config["position"] == "Right":
         last_coord = (int((config["size"][0] - 1) - (heights[1] + 1)), int(offset))
@@ -257,11 +311,20 @@ def draw_wave(args):
         sr = cv2.dnn_superres.DnnSuperResImpl_create()
         path = find_by_relative_path("ESPCN_x2.pb")
         sr.readModel(path)
+        if config["use_gpu"]:
+            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+        else:
+            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
         sr.setModel("espcn", 2)
         result = sr.upsample(background)
         background = result
-        if config["SSAA"]:
-            background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
+
+    if config["use_gpu"]:
+        background = cv2.UMat.get(background)
+
+    if config["SSAA"]:
+        background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
+
     return background
 
 def draw_wave_segment(output_image, xcoord, ycoord, config, height, last_coord):

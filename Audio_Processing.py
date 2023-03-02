@@ -8,6 +8,25 @@ from copy import deepcopy
 import Functions as F
 import Classes
 import logging
+import os
+
+def create_gpu_group(l, n, config):
+    for i in range(0, len(l), n):
+        yield (l[i:i + n], config)
+
+def gpu_task(groups):
+    args, config = groups
+    output = []
+    if config["solar"]:
+        for arg in args:
+            output.append(F.draw_circle(arg))
+    elif config["wave"]:
+        for arg in args:
+            output.append(F.draw_wave(arg))
+    else:
+        for arg in args:
+            output.append(F.draw_bars(arg))
+    return output
         
 def render(config, progress, main):
     """
@@ -30,6 +49,7 @@ def render(config, progress, main):
     else:
         background = config["background"]
     background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
+    config["background"] = background
 
     if config["FILE"][-4:] != ".wav":
         if config["FILE"][-4:] == ".mp3":
@@ -76,7 +96,10 @@ def render(config, progress, main):
         result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
     FILE = config["FILE"]
 
-    loops = length_in_frames // 300 + 8
+    if config["use_gpu"]:
+        loops = length_in_frames // 600 + 1
+    else:
+        loops = length_in_frames // 300 + 8
     for _ in range(loops):
         args = []
         for n in range(int(length_in_frames / loops)):
@@ -85,41 +108,48 @@ def render(config, progress, main):
             args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
             curr_step += num_frames
             prev_step += num_frames
-        with Pool(processes=10) as pool:
+        with Pool(processes=os.cpu_count() // 2) as pool:
             ffts = pool.map(F.calc_fft, args)
         args = []
         
         heights = []
+        output = []
         for n in ffts:
             heights.append(F.bins(n[0], n[1], np.ones(num_bars), num_bars, config))
         for c,n in enumerate(ffts):
-                args.append((deepcopy(background), num_bars, heights[c], config))
-        with Pool(processes=10) as pool:
-            if config["solar"]:
-                output = pool.map(F.draw_circle, args)
-            elif config["wave"]:
-                output = pool.map(F.draw_wave, args)
-            else:
-                output = pool.map(F.draw_bars, args)
+                args.append((num_bars, heights[c], config))
+        if not config["use_gpu"]:
+            with Pool(processes=os.cpu_count() // 2) as pool:
+                if config["solar"]:
+                    output = pool.map(F.draw_circle, args)
+                elif config["wave"]:
+                    output = pool.map(F.draw_wave, args)
+                else:
+                    output = pool.map(F.draw_bars, args)
+        else:
+            groups = list(create_gpu_group(args, len(args) // (os.cpu_count() // 2), config))
+            with Pool(processes=os.cpu_count() // 2) as pool:
+                output = pool.map(gpu_task, groups)
+        groups = []
         args = []
 
-        for _,f in enumerate(output):
-            result.write(f)
-        output = []
-        ffts = []
+        flatten_list = lambda y:[x for a in y for x in flatten_list(a)] if type(y) is list else [y]
+        output = flatten_list(output)
+
+        
 
         progress.step(100 // loops)
         main.update()
-        
+
+    result.release()
     try:
-        result.release()
         video = VideoFileClip(f"{FILE}.mp4")
         audio = AudioFileClip(FILE)
         audio = audio.subclip(0, length_in_seconds)
         final_clip = video.set_audio(audio)
         final_clip.write_videofile(f"{FILE}_Audio.mp4", logger=None)
     except Exception as e:
-        logging.error("Exception occurred", exc_info=True)
+        logging.error("MoviePy Error, check your FFMPEG distribution", exc_info=True)
     
     progress.step(100)
     main.update()
@@ -129,4 +159,14 @@ if __name__ == "__main__":
     with open("config.toml", "rb") as f:
         config = tl.load(f)
         config = config["settings"]
+
+    from time import perf_counter
+    start = perf_counter()
     render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
+    middle = perf_counter()
+    config["use_gpu"] = False
+    render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
+    end = perf_counter()
+
+    print(f"GPU: {middle-start}")
+    print(f"CPU: {end-middle}")
