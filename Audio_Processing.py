@@ -4,7 +4,6 @@ import cv2
 from multiprocessing import Pool
 import tomllib as tl
 from moviepy.editor import VideoFileClip, AudioFileClip
-from copy import deepcopy
 import Functions as F
 import Classes
 import logging
@@ -97,7 +96,7 @@ def render(config, progress, main):
     FILE = config["FILE"]
 
     if config["use_gpu"]:
-        loops = length_in_frames // 600 + 1
+        loops = length_in_frames // 300 + 1
     else:
         loops = length_in_frames // 300 + 8
     for _ in range(loops):
@@ -166,10 +165,6 @@ if __name__ == "__main__":
     from time import perf_counter
     start = perf_counter()
     render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
-    middle = perf_counter()
-    config["use_gpu"] = False
-    render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
     end = perf_counter()
 
-    print(f"GPU: {middle-start}")
-    print(f"CPU: {end-middle}")
+    print(f"Wall time: {end-start}")
