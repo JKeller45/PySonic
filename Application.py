@@ -127,6 +127,8 @@ def run():
         config["wave"] = False
         config["solar"] = False
 
+    config["use_gpu"] = True
+
     render(config, app.progress, app.mainwindow)
 
 if __name__ == '__main__':
