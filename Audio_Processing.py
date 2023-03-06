@@ -8,6 +8,8 @@ import Functions as F
 import Classes
 import logging
 import os
+from io import BytesIO
+from PIL import Image as im
 
 def calc_heights_async(fft, num_bars, config):
     heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, config)
@@ -17,7 +19,7 @@ def calc_heights_async(fft, num_bars, config):
         return F.draw_wave(num_bars, heights, config)
     else:
         return F.draw_bars(num_bars, heights, config)
-        
+
 def render(config, progress, main):
     """
     The main render function
@@ -101,12 +103,14 @@ def render(config, progress, main):
                 outputs.append(FramePool.apply_async(calc_heights_async, (fft, num_bars, config)))
                 fft = None
             for c,frame in enumerate(outputs):
-                result.write(frame.get())
+                img = frame.get()
+                result.write(np.array(im.open(img)))
+                img.flush()
                 outputs[c] = None
                 progress.step(length_in_frames // 100)
                 main.update()
-
-    ffts = []
+    del ffts
+    del outputs
     result.release()
 
     try:
@@ -131,9 +135,5 @@ if __name__ == "__main__":
     start = perf_counter()
     render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
     middle = perf_counter()
-    config["use_gpu"] = False
-    render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
-    end = perf_counter()
 
-    print(f"GPU: {middle-start}")
-    print(f"CPU: {end-middle}")
+    print(f"CPU: {middle-start}")

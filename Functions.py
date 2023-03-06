@@ -5,7 +5,13 @@ import math
 import cv2
 from PIL import Image as im
 import sys, os
-from copy import deepcopy
+from io import BytesIO
+
+def compress(img):
+    buffer = BytesIO()
+    img = im.fromarray(img)
+    img.save(buffer, "JPEG", quality=100)
+    return buffer
 
 def find_by_relative_path(relative_path):
     """
@@ -132,9 +138,7 @@ def draw_bars(num_bars, heights, config):
 
     #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     offset = 0
-
     background = config["background"]
-
     if config["use_gpu"]:
         background = cv2.UMat(background)
 
@@ -150,24 +154,13 @@ def draw_bars(num_bars, heights, config):
         offset += (config["width"] + config["separation"])
 
     if config["SSAA"] or config["AISS"]:
-        sr = cv2.dnn_superres.DnnSuperResImpl_create()
-        path = find_by_relative_path("ESPCN_x2.pb")
-        sr.readModel(path)
-        if config["use_gpu"]:
-            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
-        else:
-            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-        sr.setModel("espcn", 2)
-        result = sr.upsample(background)
-        background = result
-
+        background = upscale(background, config)
     if config["use_gpu"]:
         background = cv2.UMat.get(background)
-
     if config["SSAA"]:
         background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
         #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
-    return background
+    return compress(background)
 
 def bins(freq, amp, heights, num_bars, config):
     """
@@ -246,9 +239,7 @@ def draw_ray(output_image, x, y, height, angle, num_bars, config):
     return output_image
 
 def draw_circle(num_bars, heights, config):
-
     background = config["background"]
-
     if config["use_gpu"]:
         background = cv2.UMat(background)
 
@@ -257,20 +248,9 @@ def draw_circle(num_bars, heights, config):
         background = draw_ray(background, config["size"][0] // 2, config["size"][1] // 2, heights[angle], angle, num_bars, config)
 
     if config["SSAA"] or config["AISS"]:
-        sr = cv2.dnn_superres.DnnSuperResImpl_create()
-        path = find_by_relative_path("ESPCN_x2.pb")
-        sr.readModel(path)
-        if config["use_gpu"]:
-            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
-        else:
-            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-        sr.setModel("espcn", 2)
-        result = sr.upsample(background)
-        background = result
-
+        background = upscale(background)
     if config["use_gpu"]:
         background = cv2.UMat.get(background)
-
     if config["SSAA"]:
         background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
 
@@ -279,7 +259,6 @@ def draw_circle(num_bars, heights, config):
 def draw_wave(num_bars, heights, config):
     #transparent = np.zeros((len(background), len(background[0]), 4))
     offset = 0
-
     background = config["background"]
 
     if config["use_gpu"]:
@@ -306,20 +285,9 @@ def draw_wave(num_bars, heights, config):
         offset += (config["width"] + config["separation"])
 
     if config["SSAA"] or config["AISS"]:
-        sr = cv2.dnn_superres.DnnSuperResImpl_create()
-        path = find_by_relative_path("ESPCN_x2.pb")
-        sr.readModel(path)
-        if config["use_gpu"]:
-            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
-        else:
-            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-        sr.setModel("espcn", 2)
-        result = sr.upsample(background)
-        background = result
-
+        background = upscale(background, config)
     if config["use_gpu"]:
         background = cv2.UMat.get(background)
-
     if config["SSAA"]:
         background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
 
@@ -343,3 +311,14 @@ def draw_wave_segment(output_image, xcoord, ycoord, config, height, last_coord):
         output_image = cv2.line(output_image, last_coord, (xcoord + config["width"], ycoord - height), config["color"], 2)
         last_coord = (xcoord + config["width"], ycoord - height)
     return last_coord
+
+def upscale(img, config):
+    sr = cv2.dnn_superres.DnnSuperResImpl_create()
+    path = find_by_relative_path("ESPCN_x2.pb")
+    sr.readModel(path)
+    if config["use_gpu"]:
+        sr.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+    else:
+        sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+    sr.setModel("espcn", 2)
+    return sr.upsample(img)
