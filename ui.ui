@@ -150,7 +150,7 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="x">140</property>
-              <property name="y">230</property>
+              <property name="y">234</property>
             </layout>
           </object>
         </child>
@@ -177,7 +177,7 @@
             <layout manager="place">
               <property name="anchor">nw</property>
               <property name="x">10</property>
-              <property name="y">230</property>
+              <property name="y">234</property>
             </layout>
           </object>
         </child>
@@ -263,6 +263,27 @@
               <property name="width">290</property>
               <property name="x">10</property>
               <property name="y">265</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Combobox" id="bar_type" named="True">
+            <property name="values">Bars Solar Wave</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="width">110</property>
+              <property name="x">75</property>
+              <property name="y">116</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label7">
+            <property name="text" translatable="yes">React Type:</property>
+            <layout manager="place">
+              <property name="anchor">nw</property>
+              <property name="x">10</property>
+              <property name="y">117</property>
             </layout>
           </object>
         </child>

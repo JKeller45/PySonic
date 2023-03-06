@@ -7,6 +7,7 @@ from tkinter.colorchooser import askcolor
 from PIL import ImageColor, Image
 import numpy as np
 import cv2
+from multiprocessing import freeze_support
 
 PROJECT_PATH = pathlib.Path(__file__).parent
 PROJECT_UI = PROJECT_PATH / "ui.ui"
@@ -44,6 +45,7 @@ class Application:
         self.ssaa = builder.get_object('ssaa')
         self.pos = builder.get_object("pos")
         self.progress = builder.get_object("progress")
+        self.bar_type = builder.get_object("bar_type")
 
         builder.connect_callbacks(callbacks)
 
@@ -70,6 +72,7 @@ def pick_color():
     colors = askcolor(title="Color Chooser")
     if colors[1] != None:
         config["color"] = list(ImageColor.getrgb(colors[1]))
+        config["color"].reverse()
 
 def pick_bg():
     """
@@ -111,22 +114,22 @@ def run():
 
     pos = app.pos.get()
 
-    if pos == "Top":
-        config["horizontal_bars"] = False
-        config["inverted_bars"] = True
-    elif pos == "Bottom":
-        config["horizontal_bars"] = False
-        config["inverted_bars"] = False
-    elif pos == "Left":
-        config["horizontal_bars"] = True
-        config["inverted_bars"] = False
-    elif pos == "Right":
-        config["horizontal_bars"] = True
-        config["inverted_bars"] = True
-    config["interpolation"] = False
+    config["position"] = pos
+    
+    bar_type = app.bar_type.get()
+    if bar_type == "Solar":
+        config["solar"] = True
+        config["wave"] = False
+    elif bar_type == "Wave":
+        config["wave"] = True
+        config["solar"] = False
+    else:
+        config["wave"] = False
+        config["solar"] = False
 
     render(config, app.progress, app.mainwindow)
 
 if __name__ == '__main__':
+    freeze_support()
     app = Application()
     app.run()
