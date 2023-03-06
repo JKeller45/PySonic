@@ -9,23 +9,14 @@ import Classes
 import logging
 import os
 
-def create_gpu_group(l, n, config):
-    for i in range(0, len(l), n):
-        yield (l[i:i + n], config)
-
-def gpu_task(groups):
-    args, config = groups
-    output = []
+def calc_heights_async(fft, num_bars, config):
+    heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, config)
     if config["solar"]:
-        for arg in args:
-            output.append(F.draw_circle(arg))
+        return F.draw_circle(num_bars, heights, config)
     elif config["wave"]:
-        for arg in args:
-            output.append(F.draw_wave(arg))
+        return F.draw_wave(num_bars, heights, config)
     else:
-        for arg in args:
-            output.append(F.draw_bars(arg))
-    return output
+        return F.draw_bars(num_bars, heights, config)
         
 def render(config, progress, main):
     """
@@ -95,55 +86,28 @@ def render(config, progress, main):
         result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
     FILE = config["FILE"]
 
-    if config["use_gpu"]:
-        loops = length_in_frames // 300 + 1
-    else:
-        loops = length_in_frames // 300 + 8
-    for _ in range(loops):
-        args = []
-        for n in range(int(length_in_frames / loops)):
-            if curr_step >= len(signal):
-                break
-            args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
-            curr_step += num_frames
-            prev_step += num_frames
-        with Pool(processes=os.cpu_count() // 2) as pool:
-            ffts = pool.map(F.calc_fft, args)
-        args = []
-        
-        heights = []
-        output = []
-        for n in ffts:
-            heights.append(F.bins(n[0], n[1], np.ones(num_bars), num_bars, config))
-        for c,n in enumerate(ffts):
-                args.append((num_bars, heights[c], config))
-        if not config["use_gpu"]:
-            with Pool(processes=os.cpu_count() // 2) as pool:
-                if config["solar"]:
-                    output = pool.map(F.draw_circle, args)
-                elif config["wave"]:
-                    output = pool.map(F.draw_wave, args)
-                else:
-                    output = pool.map(F.draw_bars, args)
-        else:
-            groups = list(create_gpu_group(args, len(args) // (os.cpu_count() // 2), config))
-            with Pool(processes=os.cpu_count() // 2) as pool:
-                output = pool.map(gpu_task, groups)
-        groups = []
-        args = []
+    args = []
+    outputs = []
+    for _ in range(length_in_frames):
+        if curr_step >= len(signal):
+            break
+        args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
+        curr_step += num_frames
+        prev_step += num_frames
+    with Pool(processes=os.cpu_count() // 2 * 3) as pool:
+        ffts = pool.imap(F.calc_fft, args)
+        for c,fft in enumerate(ffts):
+            outputs.append(pool.apply_async(calc_heights_async, (fft, num_bars, config)))
+            fft = None
+        for c,frame in enumerate(outputs):
+            result.write(frame.get())
+            outputs[c] = None
+            progress.step(length_in_frames // 100)
+            main.update()
 
-        flatten_list = lambda y:[x for a in y for x in flatten_list(a)] if type(y) is list else [y]
-        output = flatten_list(output)
-
-        for _,f in enumerate(output):
-            result.write(f)
-        output = []
-        ffts = []
-
-        progress.step(100 // loops)
-        main.update()
-
+    ffts = []
     result.release()
+
     try:
         video = VideoFileClip(f"{FILE}.mp4")
         audio = AudioFileClip(FILE)

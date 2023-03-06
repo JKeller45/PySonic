@@ -114,7 +114,7 @@ def draw_rect(output_image, xcoord, ycoord, config, height):
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + config["width"], ycoord - height), config["color"], -1)
     return output_image
 
-def draw_bars(args):
+def draw_bars(num_bars, heights, config):
     """
     Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
 
@@ -129,7 +129,7 @@ def draw_bars(args):
     -------
     background (np.ndarray): the final frame with all bars drawn over its
     """
-    num_bars, heights, config = args
+
     #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     offset = 0
 
@@ -245,8 +245,7 @@ def draw_ray(output_image, x, y, height, angle, num_bars, config):
     output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / (num_bars / 360)), 80), get_coords(x, y, math.radians(angle / (num_bars / 360)), height), config["color"], 6)
     return output_image
 
-def draw_circle(args):
-    num_bars, heights, config = args
+def draw_circle(num_bars, heights, config):
 
     background = config["background"]
 
@@ -277,8 +276,7 @@ def draw_circle(args):
 
     return background
 
-def draw_wave(args):
-    num_bars, heights, config = args
+def draw_wave(num_bars, heights, config):
     #transparent = np.zeros((len(background), len(background[0]), 4))
     offset = 0
 
