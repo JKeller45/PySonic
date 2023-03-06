@@ -211,7 +211,7 @@ def bins(freq, amp, heights, num_bars, config):
 
 def add_height(heights, group, amp, angle, side, width, damping, config):
     """
-    Uses a sinoidal decay to add height to adjacent bars to give a more natural, non blocky, look to each frame.
+    Uses a decay function to add height to adjacent bars to give a more natural, non blocky, look to each frame.
 
     Parameters
     ----------
