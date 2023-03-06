@@ -8,7 +8,6 @@ import Functions as F
 import Classes
 import logging
 import os
-from io import BytesIO
 from PIL import Image as im
 
 def calc_heights_async(fft, num_bars, config):

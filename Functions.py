@@ -7,12 +7,6 @@ from PIL import Image as im
 import sys, os
 from io import BytesIO
 
-def compress(img):
-    buffer = BytesIO()
-    img = im.fromarray(img)
-    img.save(buffer, "JPEG", quality=100)
-    return buffer
-
 def find_by_relative_path(relative_path):
     """
     Finds the location of the DNN models when compiled
@@ -44,27 +38,6 @@ def plot_fft(freqs_side, FFT_side):
     plt.xscale("log")
     plt.xlim((0,25000))
     plt.show()
-
-def alpha_composite(foreground, background):
-    """
-    Implementation of alpha composition. Used for overlaying RGBA images for partial/fully transparent overlays.
-
-    Parameters
-    ----------
-    foreground (np.ndarray): the image in the foreground
-    background (np.ndarray): the image being being composited on top of (the background)
-
-    Returns
-    -------
-    background (np.ndarray): the fully composited image
-    """
-    alpha_background = background[:,:,3] / 255.0
-    alpha_foreground = foreground[:,:,3] / 255.0
-    for color in range(0, 3):
-        background[:,:,color] = alpha_foreground * foreground[:,:,color] + \
-            alpha_background * background[:,:,color] * (1 - alpha_foreground)
-    background[:,:,3] = (1 - (1 - alpha_foreground) * (1 - alpha_background)) * 255
-    return background
 
 def calc_fft(args):
     """
@@ -136,7 +109,6 @@ def draw_bars(num_bars, heights, config):
     background (np.ndarray): the final frame with all bars drawn over its
     """
 
-    #transparent = np.zeros((len(backgroud), len(backgroud[0]), 4))
     offset = 0
     background = config["background"]
     if config["use_gpu"]:
@@ -257,7 +229,6 @@ def draw_circle(num_bars, heights, config):
     return background
 
 def draw_wave(num_bars, heights, config):
-    #transparent = np.zeros((len(background), len(background[0]), 4))
     offset = 0
     background = config["background"]
 
@@ -322,3 +293,9 @@ def upscale(img, config):
         sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
     sr.setModel("espcn", 2)
     return sr.upsample(img)
+
+def compress(img):
+    buffer = BytesIO()
+    img = im.fromarray(img)
+    img.save(buffer, "JPEG", quality=100)
+    return buffer
