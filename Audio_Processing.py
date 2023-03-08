@@ -81,11 +81,12 @@ def render(config, progress, main):
     length_in_seconds = config["length"]
     length_in_frames = config["frame_rate"] * length_in_seconds
 
+    path, file_name = os.path.split(config["FILE"])
+
     if config["AISS"]:
-        result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], (config["size"][0] * 2, config["size"][1] * 2))
+        result = cv2.VideoWriter(f'{config["output"]}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], (config["size"][0] * 2, config["size"][1] * 2))
     else:
-        result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
-    FILE = config["FILE"]
+        result = cv2.VideoWriter(f'{config["output"]}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
 
     args = []
     outputs = []
@@ -115,11 +116,11 @@ def render(config, progress, main):
     result.release()
 
     try:
-        video = VideoFileClip(f"{FILE}.mp4")
-        audio = AudioFileClip(FILE)
+        video = VideoFileClip(f'{config["output"]}{file_name}.mp4')
+        audio = AudioFileClip(config["FILE"])
         audio = audio.subclip(0, length_in_seconds)
         final_clip = video.set_audio(audio)
-        final_clip.write_videofile(f"{FILE}_Audio.mp4", logger=None)
+        final_clip.write_videofile(config["FILE"] + "_Audio.mp4", logger=None)
     except Exception as e:
         logging.error("MoviePy Error, check your FFMPEG distribution", exc_info=True)
     

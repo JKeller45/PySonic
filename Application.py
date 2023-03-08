@@ -22,7 +22,8 @@ class Application:
                 'set_aa': set_aa,
                 'pick_color': pick_color,
                 'set_ss': set_ss,
-                "pick_bg": pick_bg
+                'pick_bg': pick_bg,
+                'compression': set_compression
         }
         
         self.builder = builder = pygubu.Builder()
@@ -33,6 +34,7 @@ class Application:
         self.aa = False
         self.ss = False
         self.bg_color = None
+        self.compress = False
 
         self.audio_path = builder.get_object('audio_path')
         self.vid_length = builder.get_object('vid_length')
@@ -57,6 +59,12 @@ def set_aa():
     Toggles the Anti-aliasing setting variable
     """
     app.aa = not app.aa
+
+def set_compression():
+    """
+    Toggles the in-memory compression setting variable
+    """
+    app.compress = not app.compress
 
 def set_ss():
     """
@@ -90,6 +98,7 @@ def run():
     global config
     config["FILE"] = app.audio_path.cget('path')
     config["length"] = int(app.vid_length.get())
+    config["output"] = app.output_path.cget('path')
     size = app.res.get()
 
     if size == "720p":
