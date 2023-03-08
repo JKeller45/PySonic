@@ -2,7 +2,7 @@ title = "Temporary Config"
 
 [settings]
 FILE = "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav"
-length = 178
+length = 10
 size = [1920, 1080]
 color = [255, 255, 255]
 background = "C:/Users/james/Desktop/pexels-pixabay-417173.jpg"
@@ -16,3 +16,4 @@ AISS = false
 solar = false
 wave = false
 use_gpu = false
+memory_compression = false

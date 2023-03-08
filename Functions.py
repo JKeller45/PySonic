@@ -1,4 +1,4 @@
-import scipy.fftpack as fftp
+import scipy.fft as fft
 import numpy as np
 from matplotlib import pyplot as plt
 import math
@@ -57,10 +57,10 @@ def calc_fft(args):
     """
     start, stop, step, signal = args
     t = np.arange(start, stop, step)
-    FFT = abs(fftp.fft(signal))
-    FFT_side = FFT[range(len(FFT) // 2)]
-    freqs = fftp.fftfreq(signal.size, t[1]-t[0])
-    freqs_side = freqs[range(len(FFT)//2)]
+    FFT = abs(fft.fft(signal))
+    FFT_side = FFT[:len(FFT) // 2]
+    freqs = fft.fftfreq(signal.size, t[1]-t[0])
+    freqs_side = freqs[:len(FFT) // 2]
     return freqs_side, FFT_side
 
 def draw_rect(output_image, xcoord, ycoord, config, height):
@@ -132,7 +132,10 @@ def draw_bars(num_bars, heights, config):
     if config["SSAA"]:
         background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
         #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
-    return compress(background)
+    if config["memory_compression"]:
+        return compress(background)
+    else:
+        return background
 
 def bins(freq, amp, heights, num_bars, config):
     """
@@ -226,7 +229,10 @@ def draw_circle(num_bars, heights, config):
     if config["SSAA"]:
         background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
 
-    return background
+    if config["memory_compression"]:
+        return compress(background)
+    else:
+        return background
 
 def draw_wave(num_bars, heights, config):
     offset = 0
@@ -262,7 +268,10 @@ def draw_wave(num_bars, heights, config):
     if config["SSAA"]:
         background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
 
-    return background
+    if config["memory_compression"]:
+        return compress(background)
+    else:
+        return background
 
 def draw_wave_segment(output_image, xcoord, ycoord, config, height, last_coord):
     xcoord = int(xcoord)
@@ -297,5 +306,5 @@ def upscale(img, config):
 def compress(img):
     buffer = BytesIO()
     img = im.fromarray(img)
-    img.save(buffer, "JPEG", quality=100)
+    img.save(buffer, "JPEG", quality=95)
     return buffer

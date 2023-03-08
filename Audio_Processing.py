@@ -95,21 +95,23 @@ def render(config, progress, main):
         args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
         curr_step += num_frames
         prev_step += num_frames
-    with Pool(processes=os.cpu_count() // 2) as FramePool:
-        with Pool(processes=os.cpu_count() // 2) as FFTPool:
+    cpus = os.cpu_count()
+    with Pool(processes=cpus // 3 * 2) as FramePool:
+        with Pool(processes=cpus // 3) as FFTPool:
             ffts = FFTPool.imap(F.calc_fft, args, chunksize=3)
             for c,fft in enumerate(ffts):
                 outputs.append(FramePool.apply_async(calc_heights_async, (fft, num_bars, config)))
                 fft = None
             for c,frame in enumerate(outputs):
                 img = frame.get()
-                result.write(np.array(im.open(img)))
-                img.flush()
+                if config["memory_compression"]:
+                    result.write(np.array(im.open(img)))
+                    img.flush()
+                else:
+                    result.write(img)
                 outputs[c] = None
                 progress.step(length_in_frames // 100)
                 main.update()
-    del ffts
-    del outputs
     result.release()
 
     try:
