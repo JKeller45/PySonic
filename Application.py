@@ -48,6 +48,7 @@ class Application:
         self.pos = builder.get_object("pos")
         self.progress = builder.get_object("progress")
         self.bar_type = builder.get_object("bar_type")
+        self.output_path = builder.get_object("output_path")
 
         builder.connect_callbacks(callbacks)
 
@@ -136,7 +137,8 @@ def run():
         config["wave"] = False
         config["solar"] = False
 
-    config["use_gpu"] = True
+    config["use_gpu"] = False
+    config["memory_compression"] = app.compress
 
     render(config, app.progress, app.mainwindow)
 

@@ -77,7 +77,7 @@
         <child>
           <object class="pygubu.builder.widgets.pathchooserinput" id="output_path" named="True">
             <property name="mustexist">true</property>
-            <property name="type">file</property>
+            <property name="type">directory</property>
             <layout manager="place">
               <property name="anchor">n</property>
               <property name="width">450</property>
