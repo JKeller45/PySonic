@@ -19,7 +19,7 @@ def calc_heights_async(fft, num_bars, config):
     else:
         return F.draw_bars(num_bars, heights, config)
 
-def render(config, progress, main):
+def render(config, progress, main, ret_val):
     """
     The main render function
 
@@ -126,6 +126,7 @@ def render(config, progress, main):
     
     progress.step(100)
     main.update()
+    ret_val.append("Done!")
     return
 
 if __name__ == "__main__":

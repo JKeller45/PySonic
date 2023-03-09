@@ -8,6 +8,7 @@ from PIL import ImageColor, Image
 import numpy as np
 import cv2
 from multiprocessing import freeze_support
+from threading import Thread
 
 PROJECT_PATH = pathlib.Path(__file__).parent
 PROJECT_UI = PROJECT_PATH / "ui.ui"
@@ -145,7 +146,12 @@ def run():
         config["use_gpu"] = False
     config["memory_compression"] = app.compress
 
-    render(config, app.progress, app.mainwindow)
+    ret_val = list()
+    thread = Thread(target=render, args=(config, app.progress, app.mainwindow, ret_val), daemon=True)
+    thread.start()
+    while ret_val == []:
+        app.mainwindow.update()
+    thread.join()
 
 if __name__ == '__main__':
     freeze_support()
