@@ -9,15 +9,17 @@ import Classes
 import logging
 import os
 from PIL import Image as im
+from itertools import cycle
+import matplotlib.pyplot as plt
 
-def calc_heights_async(fft, num_bars, config):
+def calc_heights_async(fft, background, num_bars, config):
     heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, config)
     if config["solar"]:
-        return F.draw_circle(num_bars, heights, config)
+        return F.draw_circle(background, num_bars, heights, config)
     elif config["wave"]:
-        return F.draw_wave(num_bars, heights, config)
+        return F.draw_wave(background, num_bars, heights, config)
     else:
-        return F.draw_bars(num_bars, heights, config)
+        return F.draw_bars(background, num_bars, heights, config)
 
 def render(config, progress, main, ret_val):
     """
@@ -34,13 +36,6 @@ def render(config, progress, main, ret_val):
         config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
         config["width"] = max(config["width"] // 2, 1)
         config["separation"] //= 2
-
-    if type(config["background"]) == str:
-        background = cv2.imread(config["background"])
-    else:
-        background = config["background"]
-    background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
-    config["background"] = background
 
     if config["FILE"][-4:] != ".wav":
         if config["FILE"][-4:] == ".mp3":
@@ -81,6 +76,26 @@ def render(config, progress, main, ret_val):
     length_in_seconds = config["length"]
     length_in_frames = config["frame_rate"] * length_in_seconds
 
+    if config["background"][-4:] == ".mp4":
+        vid = cv2.VideoCapture(config["background"])
+        backgrounds = []
+        success, image = vid.read()
+        count = 1
+        while success and count <= length_in_frames // 2:
+            backgrounds.append(image)
+            success, image = vid.read()
+            count += 1
+        for c,v in enumerate(backgrounds):
+            backgrounds[c] = cv2.resize(v, config["size"], interpolation=cv2.INTER_AREA)
+        backgrounds = backgrounds + backgrounds[::-1]
+        backgrounds = cycle(backgrounds)
+    elif type(config["background"]) == str:
+        background = cv2.imread(config["background"])
+        background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
+    else:
+        background = config["background"]
+        background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
+
     path, file_name = os.path.split(config["FILE"])
 
     if config["AISS"]:
@@ -101,7 +116,9 @@ def render(config, progress, main, ret_val):
         with Pool(processes=cpus // 3) as FFTPool:
             ffts = FFTPool.imap(F.calc_fft, args, chunksize=3)
             for c,fft in enumerate(ffts):
-                outputs.append(FramePool.apply_async(calc_heights_async, (fft, num_bars, config)))
+                if backgrounds:
+                    background = next(backgrounds)
+                outputs.append(FramePool.apply_async(calc_heights_async, (fft, background, num_bars, config)))
                 fft = None
             for c,frame in enumerate(outputs):
                 img = frame.get()
@@ -136,7 +153,7 @@ if __name__ == "__main__":
 
     from time import perf_counter
     start = perf_counter()
-    render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
+    render(config, Classes.Progress_Spoof(), Classes.Main_Spoof(), [])
     middle = perf_counter()
 
     print(f"CPU: {middle-start}")

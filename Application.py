@@ -144,6 +144,7 @@ def run():
         config["use_gpu"] = True
     else:
         config["use_gpu"] = False
+        
     config["memory_compression"] = app.compress
 
     ret_val = list()

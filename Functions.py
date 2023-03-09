@@ -93,7 +93,7 @@ def draw_rect(output_image, xcoord, ycoord, config, height):
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + config["width"], ycoord - height), config["color"], -1)
     return output_image
 
-def draw_bars(num_bars, heights, config):
+def draw_bars(background, num_bars, heights, config):
     """
     Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
 
@@ -110,7 +110,6 @@ def draw_bars(num_bars, heights, config):
     """
 
     offset = 0
-    background = config["background"]
     if config["use_gpu"]:
         background = cv2.UMat(background)
 
@@ -213,8 +212,7 @@ def draw_ray(output_image, x, y, height, angle, num_bars, config):
     output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / (num_bars / 360)), 80), get_coords(x, y, math.radians(angle / (num_bars / 360)), height), config["color"], 6)
     return output_image
 
-def draw_circle(num_bars, heights, config):
-    background = config["background"]
+def draw_circle(background, num_bars, heights, config):
     if config["use_gpu"]:
         background = cv2.UMat(background)
 
@@ -234,9 +232,8 @@ def draw_circle(num_bars, heights, config):
     else:
         return background
 
-def draw_wave(num_bars, heights, config):
+def draw_wave(background, num_bars, heights, config):
     offset = 0
-    background = config["background"]
 
     if config["use_gpu"]:
         background = cv2.UMat(background)
