@@ -53,10 +53,10 @@
         </child>
         <child>
           <object class="ttk.Label" id="bg_img" named="True">
-            <property name="text" translatable="yes">Background Image:</property>
+            <property name="text" translatable="yes">Background Image or Video:</property>
             <layout manager="place">
               <property name="anchor">nw</property>
-              <property name="x">103</property>
+              <property name="x">55</property>
               <property name="y">83</property>
             </layout>
           </object>

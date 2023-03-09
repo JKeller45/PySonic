@@ -30,6 +30,7 @@ def render(config, progress, main, ret_val):
     progress (ttk.Progressbar): the progress bar in the UI. Used for updating
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
+    progress.step(5)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
     if config["AISS"]:
         config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
@@ -84,11 +85,9 @@ def render(config, progress, main, ret_val):
         if config["circular_looped_video"]:
             vid_length //= 2
         while success and count <= vid_length:
-            backgrounds.append(image)
+            backgrounds.append(cv2.resize(image, config["size"], interpolation=cv2.INTER_AREA))
             success, image = vid.read()
             count += 1
-        for c,v in enumerate(backgrounds):
-            backgrounds[c] = cv2.resize(v, config["size"], interpolation=cv2.INTER_AREA)
         backgrounds = backgrounds + backgrounds[::-1]
         backgrounds = cycle(backgrounds)
     elif type(config["background"]) == str:
@@ -130,7 +129,7 @@ def render(config, progress, main, ret_val):
                 else:
                     result.write(img)
                 outputs[c] = None
-                progress.step(100 / length_in_frames)
+                progress.step(90 / length_in_frames)
                 main.update()
     result.release()
 

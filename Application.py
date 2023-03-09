@@ -157,7 +157,7 @@ def run():
     config["circular_looped_video"] = app.circular_loop
 
     ret_val = list()
-    thread = Thread(target=render, args=(config, app.progress, app.mainwindow, ret_val), daemon=True)
+    thread = Thread(target=render, args=(config, app.progress, app.mainwindow, ret_val))
     thread.start()
     while ret_val == []:
         app.mainwindow.update()
