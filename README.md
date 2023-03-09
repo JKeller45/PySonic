@@ -2,7 +2,7 @@
 
 This app is a audio react visualizer built entirely in Python. It is fully functional, but is rapidly being developed and new features are being added. Currently, it runs slowly, but this will change once a specific Python package (Numba) is updated for 3.11. This should happen in the near future.
 
-This app is designed to be a replacement for Sonic Candle, a very similar app that I used for years. It was orphaned over 5 years ago, and I decided to develop an new version. At the moment, I am more or less at feature parity with Sonic Candle. I also have some new additions, and there are a few other cool features in the work, including transpartent background videos.
+This app is designed to be a replacement for Sonic Candle, a very similar app that I used for years. It was orphaned 8 years ago, and I decided to develop an new version. At the moment, I am more or less at feature parity with Sonic Candle. I also have some new additions, and there are a few other cool features in the work, including transpartent background videos.
 
 Features include:
 - Multiple audio react types
