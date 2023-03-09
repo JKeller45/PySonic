@@ -24,7 +24,8 @@ class Application:
                 'pick_color': pick_color,
                 'set_ss': set_ss,
                 'pick_bg': pick_bg,
-                'compression': set_compression
+                'compression': set_compression,
+                'set_loop': set_loop,
         }
         
         self.builder = builder = pygubu.Builder()
@@ -36,6 +37,7 @@ class Application:
         self.ss = False
         self.bg_color = None
         self.compress = False
+        self.circular_loop = False
 
         self.audio_path = builder.get_object('audio_path')
         self.vid_length = builder.get_object('vid_length')
@@ -74,6 +76,12 @@ def set_ss():
     Toggles the Super Sampling setting variable
     """
     app.ss = not app.ss
+
+def set_loop():
+    """
+    Toggles the loop type variable
+    """
+    app.circular_loop = not app.circular_loop
 
 def pick_color():
     """
@@ -146,6 +154,7 @@ def run():
         config["use_gpu"] = False
         
     config["memory_compression"] = app.compress
+    config["circular_looped_video"] = app.circular_loop
 
     ret_val = list()
     thread = Thread(target=render, args=(config, app.progress, app.mainwindow, ret_val), daemon=True)

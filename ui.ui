@@ -258,7 +258,7 @@
             <property name="text" translatable="yes">Video Resolution:</property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="x">60</property>
+              <property name="x">50</property>
               <property name="y">40</property>
             </layout>
           </object>
@@ -268,7 +268,7 @@
             <property name="text" translatable="yes">Video Framerate:</property>
             <layout manager="place">
               <property name="anchor">e</property>
-              <property name="x">410</property>
+              <property name="x">498</property>
               <property name="y">40</property>
             </layout>
           </object>
@@ -278,7 +278,7 @@
             <property name="text" translatable="yes">Video Length:</property>
             <layout manager="place">
               <property name="anchor">e</property>
-              <property name="x">630</property>
+              <property name="x">670</property>
               <property name="y">40</property>
             </layout>
           </object>
@@ -313,8 +313,8 @@
             <property name="state">normal</property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="width">75</property>
-              <property name="x">420</property>
+              <property name="width">70</property>
+              <property name="x">508</property>
               <property name="y">40</property>
             </layout>
           </object>
@@ -327,8 +327,8 @@
             <property name="values">720p 1080p 1440p 4K</property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="width">90</property>
-              <property name="x">160</property>
+              <property name="width">80</property>
+              <property name="x">150</property>
               <property name="y">40</property>
             </layout>
           </object>
@@ -337,8 +337,8 @@
           <object class="ttk.Entry" id="vid_length" named="True">
             <layout manager="place">
               <property name="anchor">e</property>
-              <property name="width">100</property>
-              <property name="x">740</property>
+              <property name="width">70</property>
+              <property name="x">750</property>
               <property name="y">40</property>
             </layout>
           </object>
@@ -386,8 +386,8 @@
             <property name="text" translatable="yes">Backend: </property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="x">60</property>
-              <property name="y">80</property>
+              <property name="x">253</property>
+              <property name="y">40</property>
             </layout>
           </object>
         </child>
@@ -396,8 +396,20 @@
             <property name="values">CPU CPU+GPU</property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="width">100</property>
-              <property name="x">120</property>
+              <property name="width">80</property>
+              <property name="x">308</property>
+              <property name="y">40</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Checkbutton" id="circular_loop" named="True">
+            <property name="command" type="command" cbtype="simple">set_loop</property>
+            <property name="text" translatable="yes">Circular Looped Video</property>
+            <property name="variable">boolean:circular_looped_vid</property>
+            <layout manager="place">
+              <property name="anchor">w</property>
+              <property name="x">80</property>
               <property name="y">80</property>
             </layout>
           </object>

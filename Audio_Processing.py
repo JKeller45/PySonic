@@ -10,7 +10,6 @@ import logging
 import os
 from PIL import Image as im
 from itertools import cycle
-import matplotlib.pyplot as plt
 
 def calc_heights_async(fft, background, num_bars, config):
     heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, config)
@@ -76,12 +75,15 @@ def render(config, progress, main, ret_val):
     length_in_seconds = config["length"]
     length_in_frames = config["frame_rate"] * length_in_seconds
 
-    if config["background"][-4:] == ".mp4":
+    if config["background"][-4:] in (".mp4",".avi",".mov",".MOV"):
         vid = cv2.VideoCapture(config["background"])
         backgrounds = []
         success, image = vid.read()
         count = 1
-        while success and count <= length_in_frames // 2:
+        vid_length = length_in_frames
+        if config["circular_looped_video"]:
+            vid_length //= 2
+        while success and count <= vid_length:
             backgrounds.append(image)
             success, image = vid.read()
             count += 1
