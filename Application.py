@@ -49,6 +49,7 @@ class Application:
         self.progress = builder.get_object("progress")
         self.bar_type = builder.get_object("bar_type")
         self.output_path = builder.get_object("output_path")
+        self.backend = builder.get_object("backend")
 
         builder.connect_callbacks(callbacks)
 
@@ -100,6 +101,7 @@ def run():
     config["FILE"] = app.audio_path.cget('path')
     config["length"] = int(app.vid_length.get())
     config["output"] = app.output_path.cget('path')
+
     size = app.res.get()
 
     if size == "720p":
@@ -137,7 +139,10 @@ def run():
         config["wave"] = False
         config["solar"] = False
 
-    config["use_gpu"] = False
+    if app.backend.get() == "CPU+GPU":
+        config["use_gpu"] = True
+    else:
+        config["use_gpu"] = False
     config["memory_compression"] = app.compress
 
     render(config, app.progress, app.mainwindow)

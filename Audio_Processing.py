@@ -111,7 +111,7 @@ def render(config, progress, main):
                 else:
                     result.write(img)
                 outputs[c] = None
-                progress.step(length_in_frames // 100)
+                progress.step(100 / length_in_frames)
                 main.update()
     result.release()
 
@@ -122,7 +122,7 @@ def render(config, progress, main):
         final_clip = video.set_audio(audio)
         final_clip.write_videofile(config["FILE"] + "_Audio.mp4", logger=None)
     except Exception as e:
-        logging.error("MoviePy Error, check your FFMPEG distribution", exc_info=True)
+        logging.error("MoviePy Error, check your FFMPEG distro", exc_info=True)
     
     progress.step(100)
     main.update()

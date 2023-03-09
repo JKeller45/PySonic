@@ -247,8 +247,8 @@
             <property name="text" translatable="yes">Super Sampling Anti-Aliasing</property>
             <property name="variable">boolean:aa</property>
             <layout manager="place">
-              <property name="anchor">center</property>
-              <property name="x">400</property>
+              <property name="anchor">e</property>
+              <property name="x">565</property>
               <property name="y">80</property>
             </layout>
           </object>
@@ -290,7 +290,7 @@
             <property name="variable">boolean:ss</property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="x">100</property>
+              <property name="x">250</property>
               <property name="y">80</property>
             </layout>
           </object>
@@ -372,11 +372,32 @@
         <child>
           <object class="ttk.Checkbutton" id="compress" named="True">
             <property name="command" type="command" cbtype="simple">compression</property>
-            <property name="text" translatable="yes">In Memory Compression</property>
+            <property name="text" translatable="yes">In-Memory Compression</property>
             <property name="variable">boolean:comrpess</property>
             <layout manager="place">
               <property name="anchor">e</property>
-              <property name="x">720</property>
+              <property name="x">740</property>
+              <property name="y">80</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Label" id="label12">
+            <property name="text" translatable="yes">Backend: </property>
+            <layout manager="place">
+              <property name="anchor">w</property>
+              <property name="x">60</property>
+              <property name="y">80</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Combobox" id="backend" named="True">
+            <property name="values">CPU CPU+GPU</property>
+            <layout manager="place">
+              <property name="anchor">w</property>
+              <property name="width">100</property>
+              <property name="x">120</property>
               <property name="y">80</property>
             </layout>
           </object>
