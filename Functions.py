@@ -173,9 +173,9 @@ def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_ba
     heights = heights * (settings.size[1] / 1080)
     if max(heights) > 300:
         heights = heights / (max(heights) / 300)
-    return heights
+    return np.array(heights, dtype=int)
 
-def add_height(heights: npt.ArrayLike, group: int, amp: int, angle: int, side: str, width: int, damping: callable, settings: Settings):
+def add_height(heights: npt.ArrayLike, group: int, amp: float, angle: int, side: str, width: int, damping: callable, settings: Settings):
     """
     Uses a decay function to add height to adjacent bars to give a more natural, non blocky, look to each frame.
 

@@ -127,7 +127,7 @@ def render(config: dict, progress, main, ret_val: list):
             for c,fft in enumerate(ffts):
                 if backgrounds:
                     background = next(backgrounds)
-                outputs.append(FramePool.apply_async(calc_heights_async, (fft, background, num_bars, config)))
+                outputs.append(FramePool.apply_async(calc_heights_async, (fft, background, num_bars, settings)))
                 fft = None
             for c,frame in enumerate(outputs):
                 img = frame.get()
