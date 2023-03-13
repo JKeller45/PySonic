@@ -53,6 +53,7 @@ class Application:
         self.bar_type = builder.get_object("bar_type")
         self.output_path = builder.get_object("output_path")
         self.backend = builder.get_object("backend")
+        self.compress = builder.get_object("compress")
 
         builder.connect_callbacks(callbacks)
 
@@ -166,4 +167,7 @@ def run():
 if __name__ == '__main__':
     freeze_support()
     app = Application()
+    app.backend.current(0)
+    app.compress.invoke()
+    app.mainwindow.update()
     app.run()
