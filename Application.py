@@ -9,11 +9,15 @@ import numpy as np
 import cv2
 from multiprocessing import freeze_support
 from threading import Thread
+from Classes import traced_thread
 
 PROJECT_PATH = pathlib.Path(__file__).parent
 PROJECT_UI = PROJECT_PATH / "ui.ui"
 
 config = {}
+pools = []
+ret_val = list()
+thread = None
 
 class Application:
     def __init__(self, master=None):
@@ -103,11 +107,21 @@ def pick_bg():
     if colors[1] != None:
         app.bg_color = ImageColor.getrgb(colors[1])
 
+def on_closing():
+    for x in pools:
+        x.terminate()
+        x.join()
+    app.mainwindow.destroy()
+
 def run():
     """
     Runs the application. Sets all settings in the config dictionary and calls the render function
     """
     global config
+    global pools
+    global ret_val
+    global thread
+
     config["FILE"] = app.audio_path.cget('path')
     config["length"] = int(app.vid_length.get())
     config["output"] = app.output_path.cget('path')
@@ -157,8 +171,7 @@ def run():
     config["memory_compression"] = app.compress
     config["circular_looped_video"] = app.circular_loop
 
-    ret_val = list()
-    thread = Thread(target=render, args=(config, app.progress, app.mainwindow, ret_val))
+    thread = traced_thread(target=render, args=(config, app.progress, app.mainwindow, pools, ret_val))
     thread.start()
     while ret_val == []:
         app.mainwindow.update()
@@ -169,5 +182,6 @@ if __name__ == '__main__':
     app = Application()
     app.backend.current(0)
     app.compress.invoke()
+    app.mainwindow.protocol("WM_DELETE_WINDOW", on_closing)
     app.mainwindow.update()
     app.run()

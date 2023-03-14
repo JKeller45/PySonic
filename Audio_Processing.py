@@ -22,7 +22,7 @@ def calc_heights_async(fft: tuple[npt.ArrayLike, npt.ArrayLike], background: npt
     else:
         return F.draw_bars(background, num_bars, heights, settings)
 
-def render(config: dict, progress, main, ret_val: list):
+def render(config: dict, progress, main, pools: list, ret_val: list):
     """
     The main render function
 
@@ -47,7 +47,6 @@ def render(config: dict, progress, main, ret_val: list):
         settings.separation //= 2
 
     if settings.audio_file[-4:] != ".wav":
-        #raise IOError("MP3 File Support Is In The Works") # Temp
         convert_args = ["ffmpeg","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav"]
         if subprocess.run(convert_args).returncode == 0:
             settings.audio_file = f"{settings.audio_file}.wav"
@@ -82,6 +81,7 @@ def render(config: dict, progress, main, ret_val: list):
 
     length_in_seconds = settings.length
     length_in_frames = int(settings.frame_rate * length_in_seconds)
+    backgrounds = None
 
     if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
         vid = cv2.VideoCapture(settings.background)
@@ -122,6 +122,8 @@ def render(config: dict, progress, main, ret_val: list):
     cpus = os.cpu_count()
     with Pool(processes=cpus // 3 * 2) as FramePool:
         with Pool(processes=cpus // 3) as FFTPool:
+            pools.append(FramePool)
+            pools.append(FFTPool)
             ffts = FFTPool.imap(F.calc_fft, args, chunksize=3)
             for c,fft in enumerate(ffts):
                 if backgrounds:
