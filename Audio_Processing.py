@@ -11,6 +11,7 @@ import os
 from PIL import Image as im
 from itertools import cycle
 import numpy.typing as npt
+import subprocess
 
 def calc_heights_async(fft: tuple[npt.ArrayLike, npt.ArrayLike], background: npt.ArrayLike, num_bars: int, settings: Settings) -> npt.ArrayLike:
     heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, settings)
@@ -46,15 +47,13 @@ def render(config: dict, progress, main, ret_val: list):
         settings.separation //= 2
 
     if settings.audio_file[-4:] != ".wav":
-        if settings.audio_file[-4:] == ".mp3":
-            raise IOError("MP3 File Support Is In The Works") # Temp
-            sound = AudioFileClip(settings.audio_file)
+        #raise IOError("MP3 File Support Is In The Works") # Temp
+        convert_args = ["ffmpeg","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav"]
+        if subprocess.run(convert_args).returncode == 0:
+            settings.audio_file = f"{settings.audio_file}.wav"
         else:
-            raise IOError("File Type Not Supproted")
-        fs_rate, signal = sound.fps, sound.to_soundarray()
-        print(signal)
-    else:
-        fs_rate, signal = wavfile.read(settings.audio_file)
+            raise IOError("FFMPEG Error: try a different file or file type")
+    fs_rate, signal = wavfile.read(settings.audio_file)
     print ("Frequency sampling", fs_rate)
     l_audio = len(signal.shape)
     if l_audio == 2:
