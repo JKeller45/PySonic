@@ -124,6 +124,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         with Pool(processes=cpus // 3) as FFTPool:
             pools.append(FramePool)
             pools.append(FFTPool)
+            print(pools)
             ffts = FFTPool.imap(F.calc_fft, args, chunksize=3)
             for c,fft in enumerate(ffts):
                 if backgrounds:
@@ -163,7 +164,7 @@ if __name__ == "__main__":
 
     from time import perf_counter
     start = perf_counter()
-    render(config, Progress_Spoof(), Main_Spoof(), [])
+    render(config, Progress_Spoof(), Main_Spoof(), [], [])
     middle = perf_counter()
 
     print(f"CPU: {middle-start}")

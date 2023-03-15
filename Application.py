@@ -8,8 +8,8 @@ from PIL import ImageColor, Image
 import numpy as np
 import cv2
 from multiprocessing import freeze_support
-from threading import Thread
-from Classes import traced_thread
+from Classes import thread_with_exception
+import sys
 
 PROJECT_PATH = pathlib.Path(__file__).parent
 PROJECT_UI = PROJECT_PATH / "ui.ui"
@@ -108,10 +108,14 @@ def pick_bg():
         app.bg_color = ImageColor.getrgb(colors[1])
 
 def on_closing():
+    ret_val.append("Terminated")
     for x in pools:
         x.terminate()
         x.join()
+    if isinstance(thread, thread_with_exception):
+        thread.raise_exception()
     app.mainwindow.destroy()
+    sys.exit()
 
 def run():
     """
@@ -171,7 +175,7 @@ def run():
     config["memory_compression"] = app.compress
     config["circular_looped_video"] = app.circular_loop
 
-    thread = traced_thread(target=render, args=(config, app.progress, app.mainwindow, pools, ret_val))
+    thread = thread_with_exception(target=render, args=(config, app.progress, app.mainwindow, pools, ret_val))
     thread.start()
     while ret_val == []:
         app.mainwindow.update()
