@@ -12,7 +12,7 @@ Features include:
 - In-memory compression
 - CPU or GPU render backend
 
-In its current state, PySonic only accepts .wav files for audio and will output .mp4 files. Mp3 support is in the works. For background, a number of video and image formats are supported.
+In its current state, PySonic only outputs as MP4 files. It accepts most common audio, video, and image inputs. There may be some mp3 or ogg files that are not compatible, but this an issue with either FFMPEG or Scipy, not PySonic.
 
 For those wishing to overlay the react on their own video background, support for transparent videos doesn't exist at the moment, but is planned. You can either use your own video as the background, or render the audio react with a solid (green) background and then chromakey. The chromakey should be very good as there is no AA, bluring, or post processing unless you choose to use the AISS or SSAA options.
 
