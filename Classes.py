@@ -1,6 +1,5 @@
 from attrs import define, validators, field
 import numpy.typing as npt
-import sys
 import threading
 import ctypes
 

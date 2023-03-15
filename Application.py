@@ -30,6 +30,7 @@ class Application:
                 'pick_bg': pick_bg,
                 'compression': set_compression,
                 'set_loop': set_loop,
+                'validate': validate
         }
         
         self.builder = builder = pygubu.Builder()
@@ -117,6 +118,13 @@ def on_closing():
     app.mainwindow.destroy()
     sys.exit()
 
+def validate(inStr):
+    try:
+        float(inStr)
+        return True
+    except ValueError:
+        return False
+
 def run():
     """
     Runs the application. Sets all settings in the config dictionary and calls the render function
@@ -146,9 +154,9 @@ def run():
     else:
         config["background"] = app.bg_path.cget('path')
 
-    config["frame_rate"] = int(app.fps.get())
-    config["width"] = int(app.width.get())
-    config["separation"] = int(app.sep.get())
+    config["frame_rate"] = int(float(app.fps.get()))
+    config["width"] = int(float(app.width.get()))
+    config["separation"] = int(float(app.sep.get()))
     config["SSAA"] = app.aa
     config["AISS"] = app.ss
 
