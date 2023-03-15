@@ -5,29 +5,24 @@ from multiprocessing import Pool
 import tomllib as tl
 from moviepy.editor import VideoFileClip, AudioFileClip
 import Functions as F
-import Classes
+from Classes import Settings, Main_Spoof, Progress_Spoof
 import logging
 import os
+from PIL import Image as im
+from itertools import cycle
+import numpy.typing as npt
+import subprocess
 
-def create_gpu_group(l, n, config):
-    for i in range(0, len(l), n):
-        yield (l[i:i + n], config)
-
-def gpu_task(groups):
-    args, config = groups
-    output = []
-    if config["solar"]:
-        for arg in args:
-            output.append(F.draw_circle(arg))
-    elif config["wave"]:
-        for arg in args:
-            output.append(F.draw_wave(arg))
+def calc_heights_async(fft: tuple[npt.ArrayLike, npt.ArrayLike], background: npt.ArrayLike, num_bars: int, settings: Settings) -> npt.ArrayLike:
+    heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, settings)
+    if settings.solar:
+        return F.draw_circle(background, num_bars, heights, settings)
+    elif settings.wave:
+        return F.draw_wave(background, num_bars, heights, settings)
     else:
-        for arg in args:
-            output.append(F.draw_bars(arg))
-    return output
-        
-def render(config, progress, main):
+        return F.draw_bars(background, num_bars, heights, settings)
+
+def render(config: dict, progress, main, pools: list, ret_val: list):
     """
     The main render function
 
@@ -37,29 +32,27 @@ def render(config, progress, main):
     progress (ttk.Progressbar): the progress bar in the UI. Used for updating
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
+
+    settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=config["size"], \
+                            color=config["color"], background=config["background"],frame_rate=config["frame_rate"], width=config["width"],\
+                            separation=config["separation"], position=config["position"], SSAA=config["SSAA"], AISS=config["AISS"], \
+                            solar=config["solar"], wave=config["wave"], use_gpu=config["use_gpu"], memory_compression=config["memory_compression"], \
+                            circular_looped_video=config["circular_looped_video"])
+
+    progress.step(5)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
-    if config["AISS"]:
-        config["size"] = (config["size"][0] // 2, config["size"][1] // 2)
-        config["width"] = max(config["width"] // 2, 1)
-        config["separation"] //= 2
+    if settings.AISS:
+        settings.size = (settings.size[0] // 2, settings.size[1] // 2)
+        settings.width = max(settings.width // 2, 1)
+        settings.separation //= 2
 
-    if type(config["background"]) == str:
-        background = cv2.imread(config["background"])
-    else:
-        background = config["background"]
-    background = cv2.resize(background, config["size"], interpolation=cv2.INTER_AREA)
-    config["background"] = background
-
-    if config["FILE"][-4:] != ".wav":
-        if config["FILE"][-4:] == ".mp3":
-            raise IOError("MP3 File Support Is In The Works") # Temp
-            sound = AudioFileClip(config["FILE"])
+    if settings.audio_file[-4:] != ".wav":
+        convert_args = ["ffmpeg","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav"]
+        if subprocess.run(convert_args).returncode == 0:
+            settings.audio_file = f"{settings.audio_file}.wav"
         else:
-            raise IOError("File Type Not Supproted")
-        fs_rate, signal = sound.fps, sound.to_soundarray()
-        print(signal)
-    else:
-        fs_rate, signal = wavfile.read(config["FILE"])
+            raise IOError("FFMPEG Error: try a different file or file type")
+    fs_rate, signal = wavfile.read(settings.audio_file)
     print ("Frequency sampling", fs_rate)
     l_audio = len(signal.shape)
     if l_audio == 2:
@@ -69,92 +62,99 @@ def render(config, progress, main):
     print ("secs", secs)
     Ts = 1.0/fs_rate
 
-    num_frames = int((1/config["frame_rate"])/Ts)
+    num_frames = int((1/settings.frame_rate)/Ts)
     curr_step = num_frames
     prev_step = 0
 
-    if config["wave"]:
-        config["separation"] = 0
-        config["width"] = 1
-    if config["position"] == "Left" or config["position"] == "Right":
-        num_bars = config["size"][1] // (config["width"] + config["separation"])
+    if settings.wave:
+        settings.separation = 0
+        settings.width = 1
+    if settings.position == "Left" or settings.position == "Right":
+        num_bars = settings.size[1] // (settings.width + settings.separation)
     else:
-        num_bars = config["size"][0] // (config["width"] + config["separation"])
-    if num_bars >= config["size"][0]:
-        num_bars = config["size"][0] - 1
-    if config["solar"]:
+        num_bars = settings.size[0] // (settings.width + settings.separation)
+    if num_bars >= settings.size[0]:
+        num_bars = settings.size[0] - 1
+    if settings.solar:
         num_bars = 360
     ffts = []
 
-    length_in_seconds = config["length"]
-    length_in_frames = config["frame_rate"] * length_in_seconds
+    length_in_seconds = settings.length
+    length_in_frames = int(settings.frame_rate * length_in_seconds)
+    backgrounds = None
 
-    if config["AISS"]:
-        result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], (config["size"][0] * 2, config["size"][1] * 2))
+    if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
+        vid = cv2.VideoCapture(settings.background)
+        backgrounds = []
+        success, image = vid.read()
+        count = 1
+        vid_length = length_in_frames
+        if settings.circular_looped_video:
+            vid_length //= 2
+        while success and count <= vid_length:
+            backgrounds.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_AREA))
+            success, image = vid.read()
+            count += 1
+        backgrounds = backgrounds + backgrounds[::-1]
+        backgrounds = cycle(backgrounds)
+    elif type(settings.background) == str:
+        background = cv2.imread(settings.background)
+        background = cv2.resize(background, settings.size, interpolation=cv2.INTER_AREA)
     else:
-        result = cv2.VideoWriter(f'{config["FILE"]}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), config["frame_rate"], config["size"])
-    FILE = config["FILE"]
+        background = settings.background
+        background = cv2.resize(background, settings.size, interpolation=cv2.INTER_AREA)
 
-    if config["use_gpu"]:
-        loops = length_in_frames // 300 + 1
+    path, file_name = os.path.split(settings.audio_file)
+
+    if settings.AISS:
+        result = cv2.VideoWriter(f'{settings.output}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), settings.frame_rate, (settings.size[0] * 2, settings.size[1] * 2))
     else:
-        loops = length_in_frames // 300 + 8
-    for _ in range(loops):
-        args = []
-        for n in range(int(length_in_frames / loops)):
-            if curr_step >= len(signal):
-                break
-            args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
-            curr_step += num_frames
-            prev_step += num_frames
-        with Pool(processes=os.cpu_count() // 2) as pool:
-            ffts = pool.map(F.calc_fft, args)
-        args = []
-        
-        heights = []
-        output = []
-        for n in ffts:
-            heights.append(F.bins(n[0], n[1], np.ones(num_bars), num_bars, config))
-        for c,n in enumerate(ffts):
-                args.append((num_bars, heights[c], config))
-        if not config["use_gpu"]:
-            with Pool(processes=os.cpu_count() // 2) as pool:
-                if config["solar"]:
-                    output = pool.map(F.draw_circle, args)
-                elif config["wave"]:
-                    output = pool.map(F.draw_wave, args)
+        result = cv2.VideoWriter(f'{settings.output}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), settings.frame_rate, settings.size)
+
+    args = []
+    outputs = []
+    for _ in range(length_in_frames):
+        if curr_step >= len(signal):
+            break
+        args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
+        curr_step += num_frames
+        prev_step += num_frames
+    cpus = os.cpu_count()
+    with Pool(processes=cpus // 3 * 2) as FramePool:
+        with Pool(processes=cpus // 3) as FFTPool:
+            pools.append(FramePool)
+            pools.append(FFTPool)
+            print(pools)
+            ffts = FFTPool.imap(F.calc_fft, args, chunksize=3)
+            for c,fft in enumerate(ffts):
+                if backgrounds:
+                    background = next(backgrounds)
+                outputs.append(FramePool.apply_async(calc_heights_async, (fft, background, num_bars, settings)))
+                fft = None
+            for c,frame in enumerate(outputs):
+                img = frame.get()
+                if settings.memory_compression:
+                    result.write(np.array(im.open(img)))
+                    img.flush()
                 else:
-                    output = pool.map(F.draw_bars, args)
-        else:
-            groups = list(create_gpu_group(args, len(args) // (os.cpu_count() // 2), config))
-            with Pool(processes=os.cpu_count() // 2) as pool:
-                output = pool.map(gpu_task, groups)
-        groups = []
-        args = []
-
-        flatten_list = lambda y:[x for a in y for x in flatten_list(a)] if type(y) is list else [y]
-        output = flatten_list(output)
-
-        for _,f in enumerate(output):
-            result.write(f)
-        output = []
-        ffts = []
-
-        progress.step(100 // loops)
-        main.update()
-
+                    result.write(img)
+                outputs[c] = None
+                progress.step(90 / length_in_frames)
+                main.update()
     result.release()
+
     try:
-        video = VideoFileClip(f"{FILE}.mp4")
-        audio = AudioFileClip(FILE)
+        video = VideoFileClip(f'{settings.output}{file_name}.mp4')
+        audio = AudioFileClip(settings.audio_file)
         audio = audio.subclip(0, length_in_seconds)
         final_clip = video.set_audio(audio)
-        final_clip.write_videofile(f"{FILE}_Audio.mp4", logger=None)
+        final_clip.write_videofile(settings.audio_file + "_Audio.mp4", logger=None)
     except Exception as e:
-        logging.error("MoviePy Error, check your FFMPEG distribution", exc_info=True)
+        logging.error("MoviePy Error, check your FFMPEG distro", exc_info=True)
     
     progress.step(100)
     main.update()
+    ret_val.append("Done!")
     return
 
 if __name__ == "__main__":
@@ -164,11 +164,7 @@ if __name__ == "__main__":
 
     from time import perf_counter
     start = perf_counter()
-    render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
+    render(config, Progress_Spoof(), Main_Spoof(), [], [])
     middle = perf_counter()
-    config["use_gpu"] = False
-    render(config, Classes.Progress_Spoof(), Classes.Main_Spoof())
-    end = perf_counter()
 
-    print(f"GPU: {middle-start}")
-    print(f"CPU: {end-middle}")
+    print(f"CPU: {middle-start}")

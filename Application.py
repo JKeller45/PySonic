@@ -8,11 +8,16 @@ from PIL import ImageColor, Image
 import numpy as np
 import cv2
 from multiprocessing import freeze_support
+from Classes import thread_with_exception
+import sys
 
 PROJECT_PATH = pathlib.Path(__file__).parent
 PROJECT_UI = PROJECT_PATH / "ui.ui"
 
 config = {}
+pools = []
+ret_val = list()
+thread = None
 
 class Application:
     def __init__(self, master=None):
@@ -22,7 +27,10 @@ class Application:
                 'set_aa': set_aa,
                 'pick_color': pick_color,
                 'set_ss': set_ss,
-                "pick_bg": pick_bg
+                'pick_bg': pick_bg,
+                'compression': set_compression,
+                'set_loop': set_loop,
+                'validate': validate
         }
         
         self.builder = builder = pygubu.Builder()
@@ -33,6 +41,8 @@ class Application:
         self.aa = False
         self.ss = False
         self.bg_color = None
+        self.compress = False
+        self.circular_loop = False
 
         self.audio_path = builder.get_object('audio_path')
         self.vid_length = builder.get_object('vid_length')
@@ -46,6 +56,9 @@ class Application:
         self.pos = builder.get_object("pos")
         self.progress = builder.get_object("progress")
         self.bar_type = builder.get_object("bar_type")
+        self.output_path = builder.get_object("output_path")
+        self.backend = builder.get_object("backend")
+        self.compress = builder.get_object("compress")
 
         builder.connect_callbacks(callbacks)
 
@@ -58,11 +71,23 @@ def set_aa():
     """
     app.aa = not app.aa
 
+def set_compression():
+    """
+    Toggles the in-memory compression setting variable
+    """
+    app.compress = not app.compress
+
 def set_ss():
     """
     Toggles the Super Sampling setting variable
     """
     app.ss = not app.ss
+
+def set_loop():
+    """
+    Toggles the loop type variable
+    """
+    app.circular_loop = not app.circular_loop
 
 def pick_color():
     """
@@ -83,13 +108,36 @@ def pick_bg():
     if colors[1] != None:
         app.bg_color = ImageColor.getrgb(colors[1])
 
+def on_closing():
+    ret_val.append("Terminated")
+    for x in pools:
+        x.terminate()
+        x.join()
+    if isinstance(thread, thread_with_exception):
+        thread.raise_exception()
+    app.mainwindow.destroy()
+    sys.exit()
+
+def validate(inStr):
+    try:
+        float(inStr)
+        return True
+    except ValueError:
+        return False
+
 def run():
     """
     Runs the application. Sets all settings in the config dictionary and calls the render function
     """
     global config
+    global pools
+    global ret_val
+    global thread
+
     config["FILE"] = app.audio_path.cget('path')
     config["length"] = int(app.vid_length.get())
+    config["output"] = app.output_path.cget('path')
+
     size = app.res.get()
 
     if size == "720p":
@@ -106,9 +154,9 @@ def run():
     else:
         config["background"] = app.bg_path.cget('path')
 
-    config["frame_rate"] = int(app.fps.get())
-    config["width"] = int(app.width.get())
-    config["separation"] = int(app.sep.get())
+    config["frame_rate"] = int(float(app.fps.get()))
+    config["width"] = int(float(app.width.get()))
+    config["separation"] = int(float(app.sep.get()))
     config["SSAA"] = app.aa
     config["AISS"] = app.ss
 
@@ -127,9 +175,25 @@ def run():
         config["wave"] = False
         config["solar"] = False
 
-    render(config, app.progress, app.mainwindow)
+    if app.backend.get() == "CPU+GPU":
+        config["use_gpu"] = True
+    else:
+        config["use_gpu"] = False
+        
+    config["memory_compression"] = app.compress
+    config["circular_looped_video"] = app.circular_loop
+
+    thread = thread_with_exception(target=render, args=(config, app.progress, app.mainwindow, pools, ret_val))
+    thread.start()
+    while ret_val == []:
+        app.mainwindow.update()
+    thread.join()
 
 if __name__ == '__main__':
     freeze_support()
     app = Application()
+    app.backend.current(0)
+    app.compress.invoke()
+    app.mainwindow.protocol("WM_DELETE_WINDOW", on_closing)
+    app.mainwindow.update()
     app.run()
