@@ -49,3 +49,4 @@ class Settings:
     use_gpu: bool = field(validator=validators.instance_of(bool))
     memory_compression: bool = field(validator=validators.instance_of(bool))
     circular_looped_video: bool = field(validator=validators.instance_of(bool))
+    snowfall: bool = field(validator=validators.instance_of(bool))

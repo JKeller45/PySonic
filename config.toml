@@ -1,9 +1,9 @@
 title = "Temporary Config"
 
 [settings]
-FILE = "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav"
+FILE = "C:/Users/james/Desktop/Light the Fuse.wav" # "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav"
 output = "C:/Users/james/Desktop/"
-length = 5
+length = 30
 size = [1920, 1080]
 color = [255, 255, 255]
 background = "C:/Users/james/Desktop/waves.mp4"
@@ -18,3 +18,4 @@ wave = false
 use_gpu = false
 memory_compression = false
 circular_looped_video = false
+snowfall = true

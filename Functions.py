@@ -92,7 +92,7 @@ def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: S
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord - height), settings.color, -1)
     return output_image
 
-def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
+def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: int, settings: Settings) -> npt.ArrayLike:
     """
     Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
 
@@ -122,6 +122,9 @@ def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, 
         elif settings.position == "Bottom":
             draw_rect(background, offset, settings.size[1] - 1, settings, heights[i] + 1)
         offset += (settings.width + settings.separation)
+
+    if settings.snowfall:
+        background = create_snowfall(background, generate_snowfall_matrix(avg_heights, 0, -45, settings), settings)
 
     if settings.SSAA or settings.AISS:
         background = upscale(background, settings)
@@ -302,3 +305,19 @@ def compress(img: npt.ArrayLike) -> BytesIO:
     img = im.fromarray(img)
     img.save(buffer, "JPEG", quality=95)
     return buffer
+
+def generate_snowfall_matrix(avg_heights: int, seed: int, angle: int, settings: Settings) -> npt.ArrayLike:
+    np.random.seed(seed)
+    matrix = np.random.choice(settings.size[0] * settings.size[1] // 200, size=settings.size)
+    x_shift = int(math.cos(math.radians(angle)) * avg_heights / 20)
+    y_shift = int(math.sin(math.radians(angle)) * avg_heights / 20)
+    matrix = np.roll(matrix, x_shift, 1)
+    matrix = np.roll(matrix, y_shift, 0)
+    return matrix
+
+def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
+    it = np.nditer(snow_matrix, flags=["multi_index"])
+    for x in it:
+        if x == 1:
+            img = cv2.circle(img, it.multi_index, 3, settings.color, -1)
+    return img

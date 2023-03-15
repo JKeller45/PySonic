@@ -13,14 +13,19 @@ from itertools import cycle
 import numpy.typing as npt
 import subprocess
 
-def calc_heights_async(fft: tuple[npt.ArrayLike, npt.ArrayLike], background: npt.ArrayLike, num_bars: int, settings: Settings) -> npt.ArrayLike:
+def calc_heights_async(args) -> npt.ArrayLike:
+    num_bars, settings = args[4:6]
+    fft = F.calc_fft(args[0:4])
     heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, settings)
+    return heights
+    
+def pick_react(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: list[int], settings: Settings) -> npt.ArrayLike:
     if settings.solar:
         return F.draw_circle(background, num_bars, heights, settings)
     elif settings.wave:
         return F.draw_wave(background, num_bars, heights, settings)
     else:
-        return F.draw_bars(background, num_bars, heights, settings)
+        return F.draw_bars(background, num_bars, heights, avg_heights, settings)
 
 def render(config: dict, progress, main, pools: list, ret_val: list):
     """
@@ -37,7 +42,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                             color=config["color"], background=config["background"],frame_rate=config["frame_rate"], width=config["width"],\
                             separation=config["separation"], position=config["position"], SSAA=config["SSAA"], AISS=config["AISS"], \
                             solar=config["solar"], wave=config["wave"], use_gpu=config["use_gpu"], memory_compression=config["memory_compression"], \
-                            circular_looped_video=config["circular_looped_video"])
+                            circular_looped_video=config["circular_looped_video"], snowfall=config["snowfall"])
 
     progress.step(5)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
@@ -77,8 +82,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         num_bars = settings.size[0] - 1
     if settings.solar:
         num_bars = 360
-    ffts = []
-
+    
     length_in_seconds = settings.length
     length_in_frames = int(settings.frame_rate * length_in_seconds)
     backgrounds = None
@@ -116,21 +120,22 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     for _ in range(length_in_frames):
         if curr_step >= len(signal):
             break
-        args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step]))
+        args.append((prev_step, curr_step, Ts, signal[prev_step:curr_step], num_bars, settings))
         curr_step += num_frames
         prev_step += num_frames
     cpus = os.cpu_count()
     with Pool(processes=cpus // 3 * 2) as FramePool:
         with Pool(processes=cpus // 3) as FFTPool:
+            avg_heights = []
             pools.append(FramePool)
             pools.append(FFTPool)
-            print(pools)
-            ffts = FFTPool.imap(F.calc_fft, args, chunksize=3)
-            for c,fft in enumerate(ffts):
+            heights = FFTPool.imap(calc_heights_async, args, chunksize=3)
+            for c, height in enumerate(heights):
                 if backgrounds:
                     background = next(backgrounds)
-                outputs.append(FramePool.apply_async(calc_heights_async, (fft, background, num_bars, settings)))
-                fft = None
+                avg_heights.append(np.mean(height[0:len(height) // 25]) + 25)
+                outputs.append(FramePool.apply_async(pick_react, (background, num_bars, height, sum(avg_heights), settings)))
+                heights = None
             for c,frame in enumerate(outputs):
                 img = frame.get()
                 if settings.memory_compression:
@@ -149,7 +154,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         audio = audio.subclip(0, length_in_seconds)
         final_clip = video.set_audio(audio)
         final_clip.write_videofile(settings.audio_file + "_Audio.mp4", logger=None)
-    except Exception as e:
+    except Exception:
         logging.error("MoviePy Error, check your FFMPEG distro", exc_info=True)
     
     progress.step(100)
