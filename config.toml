@@ -1,9 +1,9 @@
 title = "Temporary Config"
 
 [settings]
-FILE = "C:/Users/james/Desktop/Light the Fuse.wav" # "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav"
+FILE = "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav" #"C:/Users/james/Desktop/Light the Fuse.wav"
 output = "C:/Users/james/Desktop/"
-length = 30
+length = 70
 size = [1920, 1080]
 color = [255, 255, 255]
 background = "C:/Users/james/Desktop/waves.mp4"

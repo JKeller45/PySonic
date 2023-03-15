@@ -133,7 +133,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
             for c, height in enumerate(heights):
                 if backgrounds:
                     background = next(backgrounds)
-                avg_heights.append(np.mean(height[0:len(height) // 25]) + 25)
+                avg_heights.append(np.mean(height[0:len(height) // 40]) + 30)
                 outputs.append(FramePool.apply_async(pick_react, (background, num_bars, height, sum(avg_heights), settings)))
                 heights = None
             for c,frame in enumerate(outputs):

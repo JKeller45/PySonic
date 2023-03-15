@@ -309,8 +309,8 @@ def compress(img: npt.ArrayLike) -> BytesIO:
 def generate_snowfall_matrix(avg_heights: int, seed: int, angle: int, settings: Settings) -> npt.ArrayLike:
     np.random.seed(seed)
     matrix = np.random.choice(settings.size[0] * settings.size[1] // 200, size=settings.size)
-    x_shift = int(math.cos(math.radians(angle)) * avg_heights / 20)
-    y_shift = int(math.sin(math.radians(angle)) * avg_heights / 20)
+    x_shift = int(math.cos(math.radians(angle)) * avg_heights / 40)
+    y_shift = int(math.sin(math.radians(angle)) * avg_heights / 40)
     matrix = np.roll(matrix, x_shift, 1)
     matrix = np.roll(matrix, y_shift, 0)
     return matrix
