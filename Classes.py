@@ -31,6 +31,10 @@ class Main_Spoof:
         pass
 
 @define
+class EffectSettings:
+    seed: int = field(validator=validators.instance_of(int))
+
+@define
 class Settings:
     audio_file: str = field(validator=validators.instance_of(str))
     output: str = field(validator=validators.instance_of(str))
@@ -50,3 +54,4 @@ class Settings:
     memory_compression: bool = field(validator=validators.instance_of(bool))
     circular_looped_video: bool = field(validator=validators.instance_of(bool))
     snowfall: bool = field(validator=validators.instance_of(bool))
+    effect_settings: EffectSettings | None = field()

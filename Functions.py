@@ -124,7 +124,7 @@ def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, 
         offset += (settings.width + settings.separation)
 
     if settings.snowfall:
-        background = create_snowfall(background, generate_snowfall_matrix(avg_heights, 0, -45, settings), settings)
+        background = create_snowfall(background, generate_snowfall_matrix(avg_heights, -45, settings), settings)
 
     if settings.SSAA or settings.AISS:
         background = upscale(background, settings)
@@ -306,9 +306,9 @@ def compress(img: npt.ArrayLike) -> BytesIO:
     img.save(buffer, "JPEG", quality=95)
     return buffer
 
-def generate_snowfall_matrix(avg_heights: int, seed: int, angle: int, settings: Settings) -> npt.ArrayLike:
-    np.random.seed(seed)
-    matrix = np.random.choice(settings.size[0] * settings.size[1] // 200, size=settings.size)
+def generate_snowfall_matrix(avg_heights: int, angle: int, settings: Settings) -> npt.ArrayLike:
+    np.random.seed(settings.effect_settings.seed)
+    matrix = np.random.choice(settings.size[0] * settings.size[1] // 150, size=settings.size)
     x_shift = int(math.cos(math.radians(angle)) * avg_heights / 40)
     y_shift = int(math.sin(math.radians(angle)) * avg_heights / 40)
     matrix = np.roll(matrix, x_shift, 1)

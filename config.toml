@@ -18,4 +18,4 @@ wave = false
 use_gpu = false
 memory_compression = false
 circular_looped_video = false
-snowfall = true
+snowfall = false

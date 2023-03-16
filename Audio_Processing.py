@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import tomllib as tl
 from moviepy.editor import VideoFileClip, AudioFileClip
 import Functions as F
-from Classes import Settings, Main_Spoof, Progress_Spoof
+from Classes import Settings, EffectSettings, Main_Spoof, Progress_Spoof
 import logging
 import os
 from PIL import Image as im
@@ -27,6 +27,15 @@ def pick_react(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike,
     else:
         return F.draw_bars(background, num_bars, heights, avg_heights, settings)
 
+def impose_height_diff(last, curr):
+    diff = np.subtract(curr, last)
+    for c,v in enumerate(diff):
+        if v > 50:
+            curr[c] = last[c] + 40
+        elif v < -50:
+            curr[c] = last[c] - 40
+    return curr
+
 def render(config: dict, progress, main, pools: list, ret_val: list):
     """
     The main render function
@@ -42,7 +51,9 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                             color=config["color"], background=config["background"],frame_rate=config["frame_rate"], width=config["width"],\
                             separation=config["separation"], position=config["position"], SSAA=config["SSAA"], AISS=config["AISS"], \
                             solar=config["solar"], wave=config["wave"], use_gpu=config["use_gpu"], memory_compression=config["memory_compression"], \
-                            circular_looped_video=config["circular_looped_video"], snowfall=config["snowfall"])
+                            circular_looped_video=config["circular_looped_video"], snowfall=config["snowfall"], effect_settings=None)
+    
+    settings.effect_settings = EffectSettings(seed=int(np.random.rand() * 1000000))
 
     progress.step(5)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
@@ -126,16 +137,27 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     cpus = os.cpu_count()
     with Pool(processes=cpus // 3 * 2) as FramePool:
         with Pool(processes=cpus // 3) as FFTPool:
-            avg_heights = []
+            avg_heights = np.zeros(length_in_frames)
+            held_heights = np.zeros((length_in_frames, num_bars))
             pools.append(FramePool)
             pools.append(FFTPool)
             heights = FFTPool.imap(calc_heights_async, args, chunksize=3)
             for c, height in enumerate(heights):
                 if backgrounds:
                     background = next(backgrounds)
-                avg_heights.append(np.mean(height[0:len(height) // 40]) + 30)
+
+                if settings.snowfall:
+                    if avg_heights.size >= 1:
+                        avg_heights[c] = (np.mean(height[0:len(height) // 40]) + avg_heights[-1]) // 2 + 30
+                    else:
+                        avg_heights[c] = np.mean(height[0:len(height) // 40]) + 30
+
+                if c > 1:
+                    height = impose_height_diff(held_heights[c - 1], height)
+                held_heights[c] = height
+
                 outputs.append(FramePool.apply_async(pick_react, (background, num_bars, height, sum(avg_heights), settings)))
-                heights = None
+            del heights
             for c,frame in enumerate(outputs):
                 img = frame.get()
                 if settings.memory_compression:
