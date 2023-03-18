@@ -158,7 +158,7 @@ def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_ba
         if v == 0:
             continue
         freq[c] = math.log10(v)
-    bins = np.linspace(math.log10(50),math.log10(20000),num_bars)
+    bins = np.linspace(math.log10(50), math.log10(20000), num_bars)
     for c,_ in enumerate(bins):
         if c == 0:
             continue
@@ -313,11 +313,9 @@ def generate_snowfall_matrix(avg_heights: int, angle: int, settings: Settings) -
     y_shift = int(math.sin(math.radians(angle)) * avg_heights / 40)
     matrix = np.roll(matrix, x_shift, 1)
     matrix = np.roll(matrix, y_shift, 0)
-    return matrix
+    return np.argwhere(matrix == 1)
 
 def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
-    it = np.nditer(snow_matrix, flags=["multi_index"])
-    for x in it:
-        if x == 1:
-            img = cv2.circle(img, it.multi_index, 3, settings.color, -1)
+    for x in snow_matrix:
+        img = cv2.circle(img, x, 3, settings.color, -1)
     return img

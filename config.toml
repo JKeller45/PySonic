@@ -3,11 +3,11 @@ title = "Temporary Config"
 [settings]
 FILE = "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav" #"C:/Users/james/Desktop/Light the Fuse.wav"
 output = "C:/Users/james/Desktop/"
-length = 180
+length = 10
 size = [1920, 1080]
 color = [255, 255, 255]
 background = "C:/Users/james/Desktop/ocean.mp4"
-frame_rate = 60
+frame_rate = 30
 width = 6
 separation = 4
 position = "Bottom"
