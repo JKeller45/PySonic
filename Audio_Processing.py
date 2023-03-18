@@ -94,7 +94,8 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     if settings.solar:
         num_bars = 360
     
-    length_in_seconds = settings.length
+    length_in_seconds = min([settings.length, secs])
+    settings.length = min([settings.length, secs])
     length_in_frames = int(settings.frame_rate * length_in_seconds)
     backgrounds = None
 
@@ -102,13 +103,20 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         vid = cv2.VideoCapture(settings.background)
         backgrounds = []
         success, image = vid.read()
+        fps = vid.get(cv2.CAP_PROP_FPS)
         count = 1
         vid_length = length_in_frames
         if settings.circular_looped_video:
             vid_length //= 2
         while success and count <= vid_length:
-            backgrounds.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_AREA))
-            success, image = vid.read()
+            if settings.frame_rate < fps:
+                backgrounds.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_AREA))
+                for _ in range(round(fps / settings.frame_rate)):
+                    success, image = vid.read()
+            elif settings.frame_rate >= fps:
+                for _ in range(round(settings.frame_rate / fps)):
+                    backgrounds.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_AREA))
+                success, image = vid.read()
             count += 1
         backgrounds = backgrounds + backgrounds[::-1]
         backgrounds = cycle(backgrounds)
