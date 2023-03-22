@@ -19,11 +19,11 @@ def calc_heights_async(args) -> npt.ArrayLike:
     heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, settings)
     return heights
     
-def pick_react(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: list[int], settings: Settings) -> npt.ArrayLike:
+def pick_react(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
     if settings.solar:
-        return F.draw_circle(background, num_bars, heights, settings)
+        return F.draw_circle(background, num_bars, heights, avg_heights, settings)
     elif settings.wave:
-        return F.draw_wave(background, num_bars, heights, settings)
+        return F.draw_wave(background, num_bars, heights, avg_heights, settings)
     else:
         return F.draw_bars(background, num_bars, heights, avg_heights, settings)
 
@@ -47,13 +47,14 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
 
-    settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=config["size"], \
-                            color=config["color"], background=config["background"],frame_rate=config["frame_rate"], width=config["width"],\
-                            separation=config["separation"], position=config["position"], SSAA=config["SSAA"], AISS=config["AISS"], \
-                            solar=config["solar"], wave=config["wave"], use_gpu=config["use_gpu"], memory_compression=config["memory_compression"], \
-                            circular_looped_video=config["circular_looped_video"], snowfall=config["snowfall"], effect_settings=None)
+    settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=config["size"],
+                            color=config["color"], background=config["background"],frame_rate=config["frame_rate"], width=config["width"],
+                            separation=config["separation"], position=config["position"], SSAA=config["SSAA"], AISS=config["AISS"],
+                            solar=config["solar"], wave=config["wave"], use_gpu=config["use_gpu"], memory_compression=config["memory_compression"],
+                            circular_looped_video=config["circular_looped_video"], snowfall=config["snowfall"], zoom=config["zoom"],
+                            effect_settings=None)
     
-    settings.effect_settings = EffectSettings(seed=int(np.random.rand() * 1000000))
+    settings.effect_settings = EffectSettings(seed=int(np.random.rand() * 1000000), snowfall_height=0.0)
 
     progress.step(5)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
@@ -145,7 +146,8 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     cpus = os.cpu_count()
     with Pool(processes=cpus // 3 * 2) as FramePool:
         with Pool(processes=cpus // 3) as FFTPool:
-            avg_heights = np.zeros(length_in_frames)
+            snowfall_heights = np.zeros(length_in_frames)
+            zoom_heights = np.zeros(length_in_frames)
             held_heights = np.zeros((length_in_frames, num_bars))
             pools.append(FramePool)
             pools.append(FFTPool)
@@ -155,24 +157,31 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                     background = next(backgrounds)
 
                 if settings.snowfall:
-                    if avg_heights.size >= 1:
-                        avg_heights[c] = (np.mean(height[0:len(height) // 40]) + avg_heights[-1]) // 2 + 30
+                    if snowfall_heights.size >= 1:
+                        snowfall_heights[c] = (np.mean(height[0:len(height) // 40]) + snowfall_heights[c - 1]) // 2 + 30
                     else:
-                        avg_heights[c] = np.mean(height[0:len(height) // 40]) + 30
+                        snowfall_heights[c] = np.mean(height[0:len(height) // 40]) + 30
+
+                if settings.zoom:
+                    if zoom_heights.size >= 1:
+                        zoom_heights[c] = (np.mean(height[0:len(height) // 80]) + zoom_heights[c - 1]) // 2
+                    else:
+                        zoom_heights[c] = np.mean(height[0:len(height) // 80])
 
                 if c > 1:
                     height = impose_height_diff(held_heights[c - 1], height)
                 held_heights[c] = height
 
-                outputs.append(FramePool.apply_async(pick_react, (background, num_bars, height, sum(avg_heights), settings)))
+                outputs.append(FramePool.apply_async(pick_react, (background, num_bars, height, (np.sum(snowfall_heights), zoom_heights[c]), settings)))
             del heights
             for c,frame in enumerate(outputs):
                 img = frame.get()
                 if settings.memory_compression:
-                    result.write(np.array(im.open(img)))
+                    frame = np.array(im.open(img))
                     img.flush()
-                else:
-                    result.write(img)
+                if settings.AISS or settings.SSAA:
+                    frame = F.upsampling(frame, settings)
+                result.write(frame)
                 outputs[c] = None
                 progress.step(90 / length_in_frames)
                 main.update()

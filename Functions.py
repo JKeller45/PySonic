@@ -92,7 +92,7 @@ def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: S
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord - height), settings.color, -1)
     return output_image
 
-def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: int, settings: Settings) -> npt.ArrayLike:
+def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
     """
     Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
 
@@ -112,6 +112,9 @@ def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, 
     if settings.use_gpu:
         background = cv2.UMat(background)
 
+    if settings.zoom:
+        background = zoom_effect(background, avg_heights[1], settings)
+
     for i in range(num_bars):
         if settings.position == "Right":
             draw_rect(background, settings.size[0] - 1, offset, settings, heights[i] + 1)
@@ -124,15 +127,11 @@ def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, 
         offset += (settings.width + settings.separation)
 
     if settings.snowfall:
-        background = create_snowfall(background, generate_snowfall_matrix(avg_heights, -45, settings), settings)
+        background = create_snowfall(background, generate_snowfall_matrix(avg_heights[0], -45, settings), settings)
 
-    if settings.SSAA or settings.AISS:
-        background = upscale(background, settings)
     if settings.use_gpu:
         background = cv2.UMat.get(background)
-    if settings.SSAA:
-        background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
-        #cv2.cvtColor(alpha_composite(transparent, cv2.cvtColor(background, cv2.COLOR_BGR2BGRA)), cv2.COLOR_BGRA2BGR)
+
     if settings.memory_compression:
         return compress(background)
     else:
@@ -216,7 +215,7 @@ def draw_ray(output_image: npt.ArrayLike, x: int, y: int, height: int, angle: in
     output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / (num_bars / 360)), 80), get_coords(x, y, math.radians(angle / (num_bars / 360)), height), color, 6)
     return output_image
 
-def draw_circle(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
+def draw_circle(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
     if settings.use_gpu:
         background = cv2.UMat(background)
 
@@ -224,19 +223,18 @@ def draw_circle(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike
     for angle in range(-90, num_bars - 90):
         background = draw_ray(background, settings.size[0] // 2, settings.size[1] // 2, heights[angle], angle, num_bars, settings.color)
 
-    if settings.SSAA or settings.AISS:
-        background = upscale(background)
+    if settings.snowfall:
+        background = create_snowfall(background, generate_snowfall_matrix(avg_heights[0], -45, settings), settings)
+
     if settings.use_gpu:
         background = cv2.UMat.get(background)
-    if settings.SSAA:
-        background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
 
     if settings.memory_compression:
         return compress(background)
     else:
         return background
 
-def draw_wave(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
+def draw_wave(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
     offset = 0
 
     if settings.use_gpu:
@@ -262,12 +260,11 @@ def draw_wave(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, 
             last_coord = draw_wave_segment(background, offset, settings.size[1] - 1, settings, heights[i] + 1, last_coord)
         offset += (settings.width + settings.separation)
 
-    if settings.SSAA or settings.AISS:
-        background = upscale(background, settings.use_gpu)
+    if settings.snowfall:
+        background = create_snowfall(background, generate_snowfall_matrix(avg_heights[0], -45, settings), settings)
+
     if settings.use_gpu:
         background = cv2.UMat.get(background)
-    if settings.SSAA:
-        background = np.array(im.fromarray(background).resize((len(background[0]) // 2, len(background) // 2), resample=im.ANTIALIAS))
 
     if settings.memory_compression:
         return compress(background)
@@ -300,6 +297,13 @@ def upscale(img: npt.ArrayLike, gpu: bool) -> npt.ArrayLike:
     sr.setModel("espcn", 2)
     return sr.upsample(img)
 
+def upsampling(frame: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
+    if settings.SSAA or settings.AISS:
+        frame = upscale(frame, settings.use_gpu)
+    if settings.SSAA:
+        frame = np.array(im.fromarray(frame).resize((len(frame[0]) // 2, len(frame) // 2), resample=im.ANTIALIAS))
+    return frame
+
 def compress(img: npt.ArrayLike) -> BytesIO:
     buffer = BytesIO()
     img = im.fromarray(img)
@@ -318,4 +322,19 @@ def generate_snowfall_matrix(avg_heights: int, angle: int, settings: Settings) -
 def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
     for x in snow_matrix:
         img = cv2.circle(img, x, 3, settings.color, -1)
+    return img
+
+def zoom_effect(img: npt.ArrayLike, zoom_height, settings: Settings):
+    zoom_amt = 1 + zoom_height / 300 * .1
+    img = zoom(img, zoom_amt)
+    return img
+
+def zoom(img: npt.ArrayLike, zoom: float, coord=None) -> npt.ArrayLike:
+    h, w, _ = [zoom * i for i in img.shape]
+    if coord is None: 
+        cx, cy = w/2, h/2
+    else: 
+        cx, cy = [zoom*c for c in coord]
+    img = cv2.resize(img, (0, 0), fx=zoom, fy=zoom)
+    img = img[int(round(cy - h/zoom * .5)) : int(round(cy + h/zoom * .5)), int(round(cx - w/zoom * .5)) : int(round(cx + w/zoom * .5)), :]
     return img

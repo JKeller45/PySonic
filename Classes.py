@@ -33,6 +33,7 @@ class Main_Spoof:
 @define
 class EffectSettings:
     seed: int = field(validator=validators.instance_of(int))
+    snowfall_height: float = field(validator=validators.instance_of(float))
 
 @define
 class Settings:
@@ -54,4 +55,5 @@ class Settings:
     memory_compression: bool = field(validator=validators.instance_of(bool))
     circular_looped_video: bool = field(validator=validators.instance_of(bool))
     snowfall: bool = field(validator=validators.instance_of(bool))
+    zoom: bool = field(validator=validators.instance_of(bool))
     effect_settings: EffectSettings | None = field()
