@@ -170,7 +170,7 @@ def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_ba
                 add_height(heights, c, amp[i], 90, "middle", settings.width, lambda amp, angle: amp - (amp * .05), settings)
             else:
                 add_height(heights, c, amp[i], 90, "middle", settings.width, lambda amp, angle: amp * math.sin(math.radians(angle)), settings)
-    heights = heights / 1_000_000_000
+    heights = heights / 2_000_000_000
     heights = heights * (settings.frame_rate // 30)
     heights = heights * (settings.size[1] / 1080)
     if max(heights) > 300:
@@ -325,7 +325,7 @@ def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, settings: Se
     return img
 
 def zoom_effect(img: npt.ArrayLike, zoom_height, settings: Settings):
-    zoom_amt = 1 + zoom_height / 300 * .1
+    zoom_amt = 1 + zoom_height / 300 * .12
     img = zoom(img, zoom_amt)
     return img
 

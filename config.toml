@@ -1,9 +1,9 @@
 title = "Temporary Config"
 
 [settings]
-FILE = "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav" #"C:/Users/james/Desktop/Light the Fuse.wav"
+FILE = "C:/Users/james/Desktop/Avicii - Without You Audio ft. Sandro Cavazza.mp3" # "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav" #"C:/Users/james/Desktop/Light the Fuse.wav"
 output = "C:/Users/james/Desktop/"
-length = 65
+length = 5
 size = [1920, 1080]
 color = [255, 255, 255]
 background = "C:/Users/james/Desktop/ocean.mp4"

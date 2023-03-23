@@ -3,7 +3,6 @@ import numpy as np
 import cv2
 from multiprocessing import Pool
 import tomllib as tl
-from moviepy.editor import VideoFileClip, AudioFileClip
 import Functions as F
 from Classes import Settings, EffectSettings, Main_Spoof, Progress_Spoof
 import logging
@@ -13,11 +12,11 @@ from itertools import cycle
 import numpy.typing as npt
 import subprocess
 
-def calc_heights_async(args) -> npt.ArrayLike:
+def calc_heights_async(args) -> tuple[npt.ArrayLike, int, int]:
     num_bars, settings = args[4:6]
-    fft = F.calc_fft(args[0:4])
-    heights = F.bins(fft[0], fft[1], np.ones(num_bars), num_bars, settings)
-    return heights
+    freq, amp = F.calc_fft(args[0:4])
+    heights = F.bins(freq, amp, np.ones(num_bars), num_bars, settings)
+    return (heights, np.mean(amp[0:12]) / 2_000_000_000, np.mean(amp[0:2]) / 1_000_000_000)
     
 def pick_react(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
     if settings.solar:
@@ -54,7 +53,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                             circular_looped_video=config["circular_looped_video"], snowfall=config["snowfall"], zoom=config["zoom"],
                             effect_settings=None)
     
-    settings.effect_settings = EffectSettings(seed=int(np.random.rand() * 1000000), snowfall_height=0.0)
+    settings.effect_settings = EffectSettings(seed=int(np.random.rand() * 1000000))
 
     progress.step(5)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
@@ -95,7 +94,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     if settings.solar:
         num_bars = 360
     
-    length_in_seconds = min([settings.length, secs])
+    length_in_seconds = secs if settings.length == 0 else min([settings.length, secs])
     settings.length = min([settings.length, secs])
     length_in_frames = int(settings.frame_rate * length_in_seconds)
     backgrounds = None
@@ -153,20 +152,24 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
             pools.append(FFTPool)
             heights = FFTPool.imap(calc_heights_async, args, chunksize=3)
             for c, height in enumerate(heights):
+                snowfall = height[1]
+                zoom = height[2]
+                height = height[0]
+
                 if backgrounds:
                     background = next(backgrounds)
 
                 if settings.snowfall:
                     if snowfall_heights.size >= 1:
-                        snowfall_heights[c] = (np.mean(height[0:len(height) // 40]) + snowfall_heights[c - 1]) // 2 + 30
+                        snowfall_heights[c] = (snowfall + snowfall_heights[c - 1]) // 2 + 30
                     else:
-                        snowfall_heights[c] = np.mean(height[0:len(height) // 40]) + 30
+                        snowfall_heights[c] = snowfall + 30
 
                 if settings.zoom:
-                    if zoom_heights.size >= 1:
-                        zoom_heights[c] = (np.mean(height[0:len(height) // 80]) + zoom_heights[c - 1]) // 2
+                    if zoom_heights.size >= 2:
+                        zoom_heights[c] = (zoom + zoom_heights[c - 1] + zoom_heights[c - 2]) // 3
                     else:
-                        zoom_heights[c] = np.mean(height[0:len(height) // 80])
+                        zoom_heights[c] = zoom
 
                 if c > 1:
                     height = impose_height_diff(held_heights[c - 1], height)
@@ -188,18 +191,15 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     result.release()
 
     try:
-        video = VideoFileClip(f'{settings.output}{file_name}.mp4')
-        audio = AudioFileClip(settings.audio_file)
-        audio = audio.subclip(0, length_in_seconds)
-        final_clip = video.set_audio(audio)
-        final_clip.write_videofile(settings.audio_file + "_Audio.mp4", logger=None)
+        combine_cmds = ["ffmpeg", "-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.audio_file}_Audio.mp4"]
+        if subprocess.run(combine_cmds).returncode == 0:
+            os.remove(f'{settings.output}{file_name}.mp4')
+            progress.step(100)
+            main.update()
+            ret_val.append("Done!")
+            return
     except Exception:
-        logging.error("MoviePy Error, check your FFMPEG distro", exc_info=True)
-    
-    progress.step(100)
-    main.update()
-    ret_val.append("Done!")
-    return
+        logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
 
 if __name__ == "__main__":
     with open("config.toml", "rb") as f:

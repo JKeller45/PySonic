@@ -33,7 +33,6 @@ class Main_Spoof:
 @define
 class EffectSettings:
     seed: int = field(validator=validators.instance_of(int))
-    snowfall_height: float = field(validator=validators.instance_of(float))
 
 @define
 class Settings:
