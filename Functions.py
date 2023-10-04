@@ -1,4 +1,4 @@
-import scipy.fft as fft
+import pyfftw.interfaces.scipy_fft as fft
 import numpy as np
 from matplotlib import pyplot as plt
 import math
@@ -6,8 +6,11 @@ import cv2
 from PIL import Image as im
 import sys, os
 from io import BytesIO
-from Classes import Settings
+from Classes import Settings, Frame_Information
 import numpy.typing as npt
+from numba import njit
+from multiprocessing import shared_memory
+from attrs import define, validators, field
 
 def find_by_relative_path(relative_path: str) -> str:
     """
@@ -33,7 +36,6 @@ def plot_fft(freqs_side: npt.ArrayLike, FFT_side: npt.ArrayLike):
     freqs_side (np.ndarray): the descrete frequency steps
     FFT_side (np.ndarray): the amplitudes at each frequency step
     """
-    plt.subplot(311)
     p3 = plt.plot(freqs_side, abs(FFT_side), "b")
     plt.xlabel('Frequency (Hz)')
     plt.ylabel('Count single-sided')
@@ -92,7 +94,7 @@ def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: S
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord - height), settings.color, -1)
     return output_image
 
-def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
+def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
     """
     Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
 
@@ -107,11 +109,20 @@ def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, 
     -------
     background (np.ndarray): the final frame with all bars drawn over its
     """
+    existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
+    shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
+    if background.video:
+        shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
+    else:
+        shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
+    new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
+    if background.video:
+        new_bg[:] = shared_bg[background.frame_number][:]
+    else:
+        new_bg[:] = shared_bg[:]
+    background = new_bg
 
     offset = 0
-    if settings.use_gpu:
-        background = cv2.UMat(background)
-
     if settings.zoom:
         background = zoom_effect(background, avg_heights[1], settings)
 
@@ -127,15 +138,9 @@ def draw_bars(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, 
         offset += (settings.width + settings.separation)
 
     if settings.snowfall:
-        background = create_snowfall(background, generate_snowfall_matrix(avg_heights[0], -45, settings), settings)
-
-    if settings.use_gpu:
-        background = cv2.UMat.get(background)
-
-    if settings.memory_compression:
-        return compress(background)
-    else:
-        return background
+        snow_matrix = generate_snowfall_matrix(avg_heights[0], -45, settings)
+        background = create_snowfall(background, snow_matrix, settings.color)
+    return background
 
 def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_bars: int, settings: Settings) -> npt.ArrayLike:
     """
@@ -153,29 +158,20 @@ def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_ba
     -------
     heights (npt.ArrayLike): the final heights of each bar in the frame
     """
-    for c,v in enumerate(freq):
-        if v == 0:
-            continue
-        freq[c] = math.log10(v)
-    bins = np.linspace(math.log10(50), math.log10(20000), num_bars)
+    bins = np.linspace(math.log10(60), math.log10(22000), num_bars)
     for c,_ in enumerate(bins):
         if c == 0:
             continue
-        for i,f in enumerate(freq):
+        for i, f in enumerate(freq):
             if f <= bins[c - 1]:
                 continue
             if f > bins[c]:
                 break
-            if settings.solar:
-                add_height(heights, c, amp[i], 90, "middle", settings.width, lambda amp, angle: amp - (amp * .05), settings)
-            else:
-                add_height(heights, c, amp[i], 90, "middle", settings.width, lambda amp, angle: amp * math.sin(math.radians(angle)), settings)
-    heights = heights / 2_000_000_000
+            add_height(heights, c, amp[i], 90, "middle", settings.width, lambda amp, angle: amp * math.sin(math.radians(angle)), settings)
+    heights = np.asarray(heights) / 200_000
     heights = heights * (settings.frame_rate // 30)
     heights = heights * (settings.size[1] / 1080)
-    if max(heights) > 300:
-        heights = heights / (max(heights) / 300)
-    return np.array(heights, dtype=int)
+    return np.int64(heights)
 
 def add_height(heights: npt.ArrayLike, group: int, amp: float, angle: int, side: str, width: int, damping: callable, settings: Settings):
     """
@@ -195,51 +191,27 @@ def add_height(heights: npt.ArrayLike, group: int, amp: float, angle: int, side:
     if angle <= 0 or group < 0 or group >= len(heights) or amp <= 0:
         return
     heights[group] += amp
-    if settings.solar:
-        ang = angle
-    else:
-        ang = angle - width * math.log10(group + 1)
+    ang = angle - width * math.log10(group + 1)
     if side == "left" or side == "middle":
         add_height(heights, group - 1, damping(amp, angle), ang, "left", width, damping, settings)
     if side == "right" or side == "middle":
         add_height(heights, group + 1, damping(amp, angle), ang, "right", width, damping, settings)
 
-def get_coords(x: int, y: int, angle: float, length: int) -> tuple[int, int]:
-    x_length = length * math.cos(angle)
-    y_length = length * math.sin(angle)
-    end_x = int(x + x_length)
-    end_y = int(y + y_length)
-    return end_x, end_y
-
-def draw_ray(output_image: npt.ArrayLike, x: int, y: int, height: int, angle: int, num_bars: int, color: list[int]) -> npt.ArrayLike:
-    output_image = cv2.line(output_image, get_coords(x,y, math.radians(angle / (num_bars / 360)), 80), get_coords(x, y, math.radians(angle / (num_bars / 360)), height), color, 6)
-    return output_image
-
-def draw_circle(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
-    if settings.use_gpu:
-        background = cv2.UMat(background)
-
-    background = cv2.circle(background, (settings.size[0] // 2, settings.size[1] // 2), 80, settings.color, -1)
-    for angle in range(-90, num_bars - 90):
-        background = draw_ray(background, settings.size[0] // 2, settings.size[1] // 2, heights[angle], angle, num_bars, settings.color)
-
-    if settings.snowfall:
-        background = create_snowfall(background, generate_snowfall_matrix(avg_heights[0], -45, settings), settings)
-
-    if settings.use_gpu:
-        background = cv2.UMat.get(background)
-
-    if settings.memory_compression:
-        return compress(background)
+def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
+    existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
+    shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
+    if background.video:
+        shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
     else:
-        return background
+        shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
+    new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
+    if background.video:
+        new_bg[:] = shared_bg[background.frame_number][:]
+    else:
+        new_bg[:] = shared_bg[:]
+    background = new_bg
 
-def draw_wave(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
     offset = 0
-
-    if settings.use_gpu:
-        background = cv2.UMat(background)
-
     if settings.position == "Right":
         last_coord = (int((settings.size[0] - 1) - (heights[1] + 1)), int(offset))
     elif settings.position == "Top":
@@ -261,15 +233,10 @@ def draw_wave(background: npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, 
         offset += (settings.width + settings.separation)
 
     if settings.snowfall:
-        background = create_snowfall(background, generate_snowfall_matrix(avg_heights[0], -45, settings), settings)
+        snow_matrix = generate_snowfall_matrix(avg_heights[0], -45, settings)
+        background = create_snowfall(background, snow_matrix, settings.color)
 
-    if settings.use_gpu:
-        background = cv2.UMat.get(background)
-
-    if settings.memory_compression:
-        return compress(background)
-    else:
-        return background
+    return background
 
 def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: Settings, height: int, last_coord: tuple[int, int]) -> tuple[int, int]:
     if settings.position == "Right":
@@ -319,13 +286,15 @@ def generate_snowfall_matrix(avg_heights: int, angle: int, settings: Settings) -
     matrix = np.roll(matrix, y_shift, 0)
     return np.argwhere(matrix == 1)
 
-def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
+@njit
+def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, color: tuple[int, int, int]) -> npt.ArrayLike:
     for x in snow_matrix:
-        img = cv2.circle(img, x, 3, settings.color, -1)
+        img = circle(img, x, 3, color)
     return img
 
-def zoom_effect(img: npt.ArrayLike, zoom_height, settings: Settings):
-    zoom_amt = 1 + zoom_height / 300 * .12
+@njit
+def zoom_effect(img: npt.ArrayLike, zoom_height):
+    zoom_amt = 1 + zoom_height / 300 * .15
     img = zoom(img, zoom_amt)
     return img
 
@@ -337,4 +306,56 @@ def zoom(img: npt.ArrayLike, zoom: float, coord=None) -> npt.ArrayLike:
         cx, cy = [zoom*c for c in coord]
     img = cv2.resize(img, (0, 0), fx=zoom, fy=zoom)
     img = img[int(round(cy - h/zoom * .5)) : int(round(cy + h/zoom * .5)), int(round(cx - w/zoom * .5)) : int(round(cx + w/zoom * .5)), :]
+    return img
+
+def calc_difference(base: npt.ArrayLike, img: npt.ArrayLike) -> npt.ArrayLike:
+    diff = np.subtract(img, base)
+    kv = []
+    index = np.argwhere(diff != 0)
+    for i in index:
+        kv.append((i, diff[i[0]][i[1]]))
+    return np.asarray(kv)
+
+def reconstruct(base: npt.ArrayLike, diff: npt.ArrayLike) -> npt.ArrayLike:
+    frame = np.copy(base)
+    for x in diff:
+        frame[x[0][0]][x[0][1]] += x[1]
+    return frame
+
+@njit
+def circle(img: npt.ArrayLike, coord: tuple[int, int], radius: int, color: tuple[int, int, int]) -> npt.ArrayLike:
+    for x in range(coord[0] - radius, coord[0] + radius):
+        for y in range(coord[1] - radius, coord[1] + radius):
+            if (x - coord[0]) ** 2 + (y - coord[1]) ** 2 < radius ** 2 and x < len(img[0]) and y < len(img) and x >= 0 and y >= 0:
+                img[y][x] = color
+    return img
+
+@njit
+def rectangle(img: npt.ArrayLike, coord1: tuple[int, int], coord2: tuple[int, int], color: tuple[int, int, int]) -> npt.ArrayLike:
+    for x in range(coord1[0], coord2[0]):
+        for y in range(coord1[1], coord2[1]):
+            if x < len(img[0]) and y < len(img) and x >= 0 and y >= 0:
+                img[y][x] = color
+    return img
+
+@njit
+def line(img: npt.ArrayLike, coord1: tuple[int, int], coord2: tuple[int, int], color: tuple[int, int, int], thickness: int) -> npt.ArrayLike:
+    x1, y1 = coord1
+    x2, y2 = coord2
+    if x1 == x2:
+        for y in range(min(y1, y2), max(y1, y2)):
+            if y < len(img) and y >= 0 and x1 < len(img[0]) and x1 >= 0:
+                img[y][x1] = color
+    elif y1 == y2:
+        for x in range(min(x1, x2), max(x1, x2)):
+            if y1 < len(img) and y1 >= 0 and x < len(img[0]) and x >= 0:
+                img[y1][x] = color
+    else:
+        m = (y2 - y1) / (x2 - x1)
+        b = y1 - m * x1
+        for x in range(min(x1, x2), max(x1, x2)):
+            y = int(m * x + b)
+            for i in range(-thickness, thickness):
+                if y + i >= 0 and y + i < len(img) and x < len(img[0]) and x >= 0:
+                    img[y + i][x] = color
     return img

@@ -165,15 +165,10 @@ def run():
     config["position"] = pos
     
     bar_type = app.bar_type.get()
-    if bar_type == "Solar":
-        config["solar"] = True
-        config["wave"] = False
-    elif bar_type == "Wave":
+    if bar_type == "Wave":
         config["wave"] = True
-        config["solar"] = False
     else:
         config["wave"] = False
-        config["solar"] = False
 
     if app.backend.get() == "CPU+GPU":
         config["use_gpu"] = True

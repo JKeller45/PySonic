@@ -189,7 +189,7 @@
         </child>
         <child>
           <object class="ttk.Combobox" id="bar_type" named="True">
-            <property name="values">Bars Solar Wave</property>
+            <property name="values">Bars Wave</property>
             <layout manager="place">
               <property name="anchor">w</property>
               <property name="width">110</property>
