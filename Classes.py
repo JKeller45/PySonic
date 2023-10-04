@@ -55,7 +55,6 @@ class Settings:
     SSAA: bool = field(validator=validators.instance_of(bool))
     AISS: bool = field(validator=validators.instance_of(bool))
     wave: bool = field(validator=validators.instance_of(bool))
-    use_gpu: bool = field(validator=validators.instance_of(bool))
     circular_looped_video: bool = field(validator=validators.instance_of(bool))
     snowfall: bool = field(validator=validators.instance_of(bool))
     zoom: bool = field(validator=validators.instance_of(bool))

@@ -253,20 +253,8 @@ def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, set
         last_coord = (xcoord + settings.width, ycoord - height)
     return last_coord
 
-def upscale(img: npt.ArrayLike, gpu: bool) -> npt.ArrayLike:
-    sr = cv2.dnn_superres.DnnSuperResImpl_create()
-    path = find_by_relative_path("ESPCN_x2.pb")
-    sr.readModel(path)
-    if gpu:
-        sr.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
-    else:
-        sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
-    sr.setModel("espcn", 2)
-    return sr.upsample(img)
-
-def upsampling(frame: npt.ArrayLike, settings: Settings) -> npt.ArrayLike:
-    if settings.SSAA or settings.AISS:
-        frame = upscale(frame, settings.use_gpu)
+def upsampling(frame: npt.ArrayLike, sr, settings: Settings) -> npt.ArrayLike:
+    sr.upsample(frame)
     if settings.SSAA:
         frame = np.array(im.fromarray(frame).resize((len(frame[0]) // 2, len(frame) // 2), resample=im.ANTIALIAS))
     return frame
@@ -328,34 +316,4 @@ def circle(img: npt.ArrayLike, coord: tuple[int, int], radius: int, color: tuple
         for y in range(coord[1] - radius, coord[1] + radius):
             if (x - coord[0]) ** 2 + (y - coord[1]) ** 2 < radius ** 2 and x < len(img[0]) and y < len(img) and x >= 0 and y >= 0:
                 img[y][x] = color
-    return img
-
-@njit
-def rectangle(img: npt.ArrayLike, coord1: tuple[int, int], coord2: tuple[int, int], color: tuple[int, int, int]) -> npt.ArrayLike:
-    for x in range(coord1[0], coord2[0]):
-        for y in range(coord1[1], coord2[1]):
-            if x < len(img[0]) and y < len(img) and x >= 0 and y >= 0:
-                img[y][x] = color
-    return img
-
-@njit
-def line(img: npt.ArrayLike, coord1: tuple[int, int], coord2: tuple[int, int], color: tuple[int, int, int], thickness: int) -> npt.ArrayLike:
-    x1, y1 = coord1
-    x2, y2 = coord2
-    if x1 == x2:
-        for y in range(min(y1, y2), max(y1, y2)):
-            if y < len(img) and y >= 0 and x1 < len(img[0]) and x1 >= 0:
-                img[y][x1] = color
-    elif y1 == y2:
-        for x in range(min(x1, x2), max(x1, x2)):
-            if y1 < len(img) and y1 >= 0 and x < len(img[0]) and x >= 0:
-                img[y1][x] = color
-    else:
-        m = (y2 - y1) / (x2 - x1)
-        b = y1 - m * x1
-        for x in range(min(x1, x2), max(x1, x2)):
-            y = int(m * x + b)
-            for i in range(-thickness, thickness):
-                if y + i >= 0 and y + i < len(img) and x < len(img[0]) and x >= 0:
-                    img[y + i][x] = color
     return img

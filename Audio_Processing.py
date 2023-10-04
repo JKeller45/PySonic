@@ -40,15 +40,16 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
     settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=np.array(config["size"]),
-                            color=tuple(config["color"]), background=config["background"],frame_rate=config["frame_rate"], width=config["width"],
+                            color=np.asarray(config["color"], dtype=np.uint8), background=config["background"],frame_rate=config["frame_rate"], width=config["width"],
                             separation=config["separation"], position=config["position"], SSAA=config["SSAA"], AISS=config["AISS"],
-                            wave=config["wave"], use_gpu=config["use_gpu"], circular_looped_video=config["circular_looped_video"], 
+                            wave=config["wave"], circular_looped_video=config["circular_looped_video"], 
                             snowfall=config["snowfall"], zoom=config["zoom"], effect_settings=None)
     
     settings.effect_settings = EffectSettings(seed=int(np.random.rand() * 1000000))
 
     progress.step(5)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
+
     if settings.AISS:
         settings.size = (settings.size[0] // 2, settings.size[1] // 2)
         settings.width = max(settings.width // 2, 1)
@@ -152,9 +153,19 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, arg[3], arg[4]) for arg in args]
         with Pool(processes=4, maxtasksperchild=30) as pool:
             outputs = pool.imap(pick_react, args)
+            sr = None
+            if settings.AISS or settings.SSAA:
+                sr = cv2.dnn_superres.DnnSuperResImpl_create()
+                path = F.find_by_relative_path("ESPCN_x2.pb")
+                sr.readModel(path)
+                sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+                sr.setModel("espcn", 2)
             for frame in outputs:
+                if settings.AISS or settings.SSAA: 
+                    frame = F.upsampling(frame, sr, settings)
                 result.write(frame)
                 del frame
+            del sr
     result.release()
 
     combine_cmds = [r"ffmpeg/ffmpeg.exe", "-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
