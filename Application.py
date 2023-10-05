@@ -24,7 +24,8 @@ class Application:
 
         callbacks = {
                 'run': run,
-                'set_aa': set_aa,
+                'set_snowfall': set_snowfall,
+                'set_zoom': set_zoom,
                 'pick_color': pick_color,
                 'set_ss': set_ss,
                 'pick_bg': pick_bg,
@@ -38,11 +39,11 @@ class Application:
         builder.add_from_file(PROJECT_UI)
         self.mainwindow = builder.get_object('PySonic', master)
 
-        self.aa = False
         self.ss = False
         self.bg_color = None
-        self.compress = False
         self.circular_loop = False
+        self.zoom = False
+        self.snowfall = False
 
         self.audio_path = builder.get_object('audio_path')
         self.vid_length = builder.get_object('vid_length')
@@ -52,24 +53,27 @@ class Application:
         self.fps = builder.get_object('fps')
         self.width = builder.get_object('bar_width')
         self.sep = builder.get_object('bar_sep')
-        self.ssaa = builder.get_object('ssaa')
         self.pos = builder.get_object("pos")
         self.progress = builder.get_object("progress")
         self.bar_type = builder.get_object("bar_type")
         self.output_path = builder.get_object("output_path")
-        self.backend = builder.get_object("backend")
-        self.compress = builder.get_object("compress")
 
         builder.connect_callbacks(callbacks)
 
     def run(self):
         self.mainwindow.mainloop()
 
-def set_aa():
+def set_snowfall():
     """
-    Toggles the Anti-aliasing setting variable
+    Toggles the Snowfall effect
     """
-    app.aa = not app.aa
+    app.snowfall = not app.snowfall
+
+def set_zoom():
+    """
+    Toggles the zoom effect
+    """
+    app.zoom = not app.zoom
 
 def set_compression():
     """
@@ -136,7 +140,7 @@ def run():
 
     config["FILE"] = app.audio_path.cget('path')
     config["length"] = int(app.vid_length.get())
-    config["output"] = app.output_path.cget('path')
+    config["output"] = app.output_path.cget('path') + "/"
 
     size = app.res.get()
 
@@ -157,8 +161,9 @@ def run():
     config["frame_rate"] = int(float(app.fps.get()))
     config["width"] = int(float(app.width.get()))
     config["separation"] = int(float(app.sep.get()))
-    config["SSAA"] = app.aa
     config["AISS"] = app.ss
+    config["zoom"] = app.zoom
+    config["snowfall"] = app.snowfall
 
     pos = app.pos.get()
 
@@ -169,13 +174,7 @@ def run():
         config["wave"] = True
     else:
         config["wave"] = False
-
-    if app.backend.get() == "CPU+GPU":
-        config["use_gpu"] = True
-    else:
-        config["use_gpu"] = False
         
-    config["memory_compression"] = app.compress
     config["circular_looped_video"] = app.circular_loop
 
     thread = thread_with_exception(target=render, args=(config, app.progress, app.mainwindow, pools, ret_val))
@@ -187,8 +186,6 @@ def run():
 if __name__ == '__main__':
     freeze_support()
     app = Application()
-    app.backend.current(0)
-    app.compress.invoke()
     app.mainwindow.protocol("WM_DELETE_WINDOW", on_closing)
     app.mainwindow.update()
     app.run()

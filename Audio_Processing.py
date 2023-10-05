@@ -45,7 +45,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                             width=config["width"], wave=config["wave"], circular_looped_video=config["circular_looped_video"], 
                             snowfall=config["snowfall"], zoom=config["zoom"], snow_seed=int(np.random.rand() * 1000000))
 
-    progress.step(5)
+    progress.step(1)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
 
     if settings.AISS:
@@ -143,7 +143,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
             args.append((Frame_Information(False, "", 0, 0), num_bars, heights, heights.mean(axis=0), settings))
 
     max_height = max(max(arg[2]) for arg in args)
-    average_heights = [arg[3] / 10000000 + 1 for arg in args]
+    average_heights = [arg[3] / 20000000 + 1 for arg in args]
     average_lows = [np.mean(arg[2][0:5]) * (settings.size[1] // 5) // max_height for arg in args]
     average_lows = F.savitzky_golay(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
@@ -153,6 +153,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         shared_background = np.ndarray(background.shape, dtype=np.uint8, buffer=frame_bg.buf)
         shared_background[:] = background[:]
         del background
+        progress_counter = 0
         args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
                     (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
         with Pool(processes=4, maxtasksperchild=50) as pool:
@@ -168,6 +169,10 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                 if settings.AISS:
                     frame = sr.upsample(frame)
                 result.write(frame)
+                progress_counter += 1
+                if progress_counter / length_in_frames >= .01:
+                    progress_counter = 0
+                    progress.step(1)
                 del frame
             del sr
     result.release()
@@ -186,6 +191,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     except Exception as e:
         print(e)
         logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+    progress.set(0)
 
 if __name__ == "__main__":
     with open("config.toml", "rb") as f:

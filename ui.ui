@@ -121,19 +121,21 @@
         <child>
           <object class="ttk.Entry" id="bar_width" named="True">
             <property name="justify">left</property>
+            <property name="text" translatable="yes">6</property>
             <property name="validate">all</property>
             <property name="validatecommand" type="command" cbtype="entry_validate" args="%P">validate</property>
             <layout manager="place">
               <property name="anchor">w</property>
               <property name="relx">0.0</property>
               <property name="width">115</property>
-              <property name="x">500</property>
+              <property name="x">345</property>
               <property name="y">90</property>
             </layout>
           </object>
         </child>
         <child>
           <object class="ttk.Entry" id="bar_sep" named="True">
+            <property name="text" translatable="yes">4</property>
             <property name="validate">all</property>
             <property name="validatecommand" type="command" cbtype="entry_validate" args="%P">validate</property>
             <layout manager="place">
@@ -149,7 +151,7 @@
             <property name="text" translatable="yes">Bar Position:</property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="x">170</property>
+              <property name="x">50</property>
               <property name="y">90</property>
             </layout>
           </object>
@@ -159,7 +161,7 @@
             <property name="text" translatable="yes">Bar Width:</property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="x">430</property>
+              <property name="x">280</property>
               <property name="y">90</property>
             </layout>
           </object>
@@ -182,7 +184,7 @@
               <property name="anchor">w</property>
               <property name="relx">0.0</property>
               <property name="width">100</property>
-              <property name="x">250</property>
+              <property name="x">125</property>
               <property name="y">90</property>
             </layout>
           </object>
@@ -234,6 +236,32 @@
             </layout>
           </object>
         </child>
+        <child>
+          <object class="ttk.Checkbutton" id="zoom" named="True">
+            <property name="command" type="command" cbtype="simple">set_zoom</property>
+            <property name="state">normal</property>
+            <property name="text" translatable="yes">Zoom Effect</property>
+            <property name="variable">string:zm</property>
+            <layout manager="place">
+              <property name="anchor">e</property>
+              <property name="x">750</property>
+              <property name="y">90</property>
+            </layout>
+          </object>
+        </child>
+        <child>
+          <object class="ttk.Checkbutton" id="snowfall" named="True">
+            <property name="command" type="command" cbtype="simple">set_snowfall</property>
+            <property name="state">normal</property>
+            <property name="text" translatable="yes">Snowfall Effect</property>
+            <property name="variable">boolean:snow</property>
+            <layout manager="place">
+              <property name="anchor">e</property>
+              <property name="x">615</property>
+              <property name="y">90</property>
+            </layout>
+          </object>
+        </child>
       </object>
     </child>
     <child>
@@ -246,24 +274,12 @@
           <property name="sticky">w</property>
         </layout>
         <child>
-          <object class="ttk.Checkbutton" id="ssaa" named="True">
-            <property name="command" type="command" cbtype="simple">set_aa</property>
-            <property name="text" translatable="yes">Super Sampling Anti-Aliasing</property>
-            <property name="variable">boolean:aa</property>
-            <layout manager="place">
-              <property name="anchor">e</property>
-              <property name="x">565</property>
-              <property name="y">80</property>
-            </layout>
-          </object>
-        </child>
-        <child>
           <object class="ttk.Label" id="label2">
             <property name="text" translatable="yes">Video Resolution:</property>
             <layout manager="place">
               <property name="anchor">w</property>
               <property name="x">50</property>
-              <property name="y">40</property>
+              <property name="y">50</property>
             </layout>
           </object>
         </child>
@@ -272,8 +288,8 @@
             <property name="text" translatable="yes">Video Framerate:</property>
             <layout manager="place">
               <property name="anchor">e</property>
-              <property name="x">498</property>
-              <property name="y">40</property>
+              <property name="x">410</property>
+              <property name="y">50</property>
             </layout>
           </object>
         </child>
@@ -282,8 +298,8 @@
             <property name="text" translatable="yes">Video Length:</property>
             <layout manager="place">
               <property name="anchor">e</property>
-              <property name="x">670</property>
-              <property name="y">40</property>
+              <property name="x">650</property>
+              <property name="y">50</property>
             </layout>
           </object>
         </child>
@@ -293,9 +309,9 @@
             <property name="text" translatable="yes">AI Super Sampling</property>
             <property name="variable">boolean:ss</property>
             <layout manager="place">
-              <property name="anchor">w</property>
-              <property name="x">250</property>
-              <property name="y">80</property>
+              <property name="anchor">e</property>
+              <property name="x">600</property>
+              <property name="y">90</property>
             </layout>
           </object>
         </child>
@@ -315,13 +331,14 @@
           <object class="ttk.Entry" id="fps" named="True">
             <property name="justify">left</property>
             <property name="state">normal</property>
+            <property name="text" translatable="yes">30</property>
             <property name="validate">all</property>
             <property name="validatecommand" type="command" cbtype="entry_validate" args="%P">validate</property>
             <layout manager="place">
               <property name="anchor">w</property>
               <property name="width">70</property>
-              <property name="x">508</property>
-              <property name="y">40</property>
+              <property name="x">420</property>
+              <property name="y">50</property>
             </layout>
           </object>
         </child>
@@ -335,19 +352,20 @@
               <property name="anchor">w</property>
               <property name="width">80</property>
               <property name="x">150</property>
-              <property name="y">40</property>
+              <property name="y">50</property>
             </layout>
           </object>
         </child>
         <child>
           <object class="ttk.Entry" id="vid_length" named="True">
+            <property name="text" translatable="yes">300</property>
             <property name="validate">all</property>
             <property name="validatecommand" type="command" cbtype="entry_validate" args="%P">validate</property>
             <layout manager="place">
               <property name="anchor">e</property>
               <property name="width">70</property>
-              <property name="x">750</property>
-              <property name="y">40</property>
+              <property name="x">730</property>
+              <property name="y">50</property>
             </layout>
           </object>
         </child>
@@ -378,47 +396,14 @@
           </object>
         </child>
         <child>
-          <object class="ttk.Checkbutton" id="compress" named="True">
-            <property name="command" type="command" cbtype="simple">compression</property>
-            <property name="text" translatable="yes">In-Memory Compression</property>
-            <property name="variable">boolean:comrpess</property>
-            <layout manager="place">
-              <property name="anchor">e</property>
-              <property name="x">740</property>
-              <property name="y">80</property>
-            </layout>
-          </object>
-        </child>
-        <child>
-          <object class="ttk.Label" id="label12">
-            <property name="text" translatable="yes">Backend: </property>
-            <layout manager="place">
-              <property name="anchor">w</property>
-              <property name="x">253</property>
-              <property name="y">40</property>
-            </layout>
-          </object>
-        </child>
-        <child>
-          <object class="ttk.Combobox" id="backend" named="True">
-            <property name="values">CPU CPU+GPU</property>
-            <layout manager="place">
-              <property name="anchor">w</property>
-              <property name="width">80</property>
-              <property name="x">308</property>
-              <property name="y">40</property>
-            </layout>
-          </object>
-        </child>
-        <child>
           <object class="ttk.Checkbutton" id="circular_loop" named="True">
             <property name="command" type="command" cbtype="simple">set_loop</property>
             <property name="text" translatable="yes">Circular Looped Video</property>
             <property name="variable">boolean:circular_looped_vid</property>
             <layout manager="place">
               <property name="anchor">w</property>
-              <property name="x">80</property>
-              <property name="y">80</property>
+              <property name="x">200</property>
+              <property name="y">90</property>
             </layout>
           </object>
         </child>
