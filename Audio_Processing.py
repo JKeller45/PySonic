@@ -40,12 +40,10 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
     settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=np.array(config["size"]),
-                            color=np.asarray(config["color"], dtype=np.uint8), background=config["background"],frame_rate=config["frame_rate"], width=config["width"],
-                            separation=config["separation"], position=config["position"], SSAA=config["SSAA"], AISS=config["AISS"],
-                            wave=config["wave"], circular_looped_video=config["circular_looped_video"], 
-                            snowfall=config["snowfall"], zoom=config["zoom"], effect_settings=None)
-    
-    settings.effect_settings = EffectSettings(seed=int(np.random.rand() * 1000000))
+                            color=tuple(config["color"]), background=config["background"],frame_rate=config["frame_rate"],
+                            separation=config["separation"], position=config["position"], AISS=config["AISS"], 
+                            width=config["width"], wave=config["wave"], circular_looped_video=config["circular_looped_video"], 
+                            snowfall=config["snowfall"], zoom=config["zoom"], snow_seed=int(np.random.rand() * 1000000))
 
     progress.step(5)
     logging.basicConfig(filename='log.log', level=logging.WARNING)
@@ -98,12 +96,12 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         vid_length = 30 * 5
         while success and count <= vid_length:
             if settings.frame_rate < fps:
-                background.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_AREA))
+                background.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_CUBIC))
                 for _ in range(round(fps / settings.frame_rate)):
                     success, image = vid.read()
             elif settings.frame_rate >= fps:
                 for _ in range(round(settings.frame_rate / fps)):
-                    background.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_AREA))
+                    background.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_CUBIC))
                 success, image = vid.read()
             backgrounds.append(count - 1)
             count += 1
@@ -114,10 +112,10 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         backgrounds = cycle(backgrounds)
     elif type(settings.background) == str:
         background = cv2.imread(settings.background)
-        background = cv2.resize(background, settings.size, interpolation=cv2.INTER_AREA)
+        background = cv2.resize(background, settings.size, interpolation=cv2.INTER_CUBIC)
     else:
         background = settings.background
-        background = cv2.resize(background, settings.size, interpolation=cv2.INTER_AREA)
+        background = cv2.resize(background, settings.size, interpolation=cv2.INTER_CUBIC)
 
     path, file_name = os.path.split(settings.audio_file)
 
@@ -144,25 +142,31 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         else:
             args.append((Frame_Information(False, "", 0, 0), num_bars, heights, heights.mean(axis=0), settings))
 
+    max_height = max(max(arg[2]) for arg in args)
+    average_heights = [arg[3] / 10000000 + 1 for arg in args]
+    average_lows = [np.mean(arg[2][0:5]) * (settings.size[1] // 5) // max_height for arg in args]
+    average_lows = F.savitzky_golay(average_lows, 17, 7)
+    average_heights = np.cumsum(average_heights)
+
     with SharedMemoryManager() as smm:
         frame_bg = smm.SharedMemory(size=background.nbytes)
         shared_background = np.ndarray(background.shape, dtype=np.uint8, buffer=frame_bg.buf)
         shared_background[:] = background[:]
         del background
-        max_height = max(max(arg[2]) for arg in args)
-        args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, arg[3], arg[4]) for arg in args]
-        with Pool(processes=4, maxtasksperchild=30) as pool:
+        args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
+                    (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
+        with Pool(processes=4, maxtasksperchild=50) as pool:
             outputs = pool.imap(pick_react, args)
             sr = None
-            if settings.AISS or settings.SSAA:
+            if settings.AISS:
                 sr = cv2.dnn_superres.DnnSuperResImpl_create()
                 path = F.find_by_relative_path("ESPCN_x2.pb")
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
             for frame in outputs:
-                if settings.AISS or settings.SSAA: 
-                    frame = F.upsampling(frame, sr, settings)
+                if settings.AISS:
+                    frame = sr.upsample(frame)
                 result.write(frame)
                 del frame
             del sr

@@ -37,10 +37,6 @@ class Frame_Information:
     frame_number: int = field(validator=validators.instance_of(int))
 
 @define
-class EffectSettings:
-    seed: int = field(validator=validators.instance_of(int))
-
-@define
 class Settings:
     audio_file: str = field(validator=validators.instance_of(str))
     output: str = field(validator=validators.instance_of(str))
@@ -52,10 +48,9 @@ class Settings:
     width: int = field(validator=validators.instance_of(int))
     separation: int = field(validator=validators.instance_of(int))
     position: str = field(validator=validators.instance_of(str))
-    SSAA: bool = field(validator=validators.instance_of(bool))
     AISS: bool = field(validator=validators.instance_of(bool))
     wave: bool = field(validator=validators.instance_of(bool))
     circular_looped_video: bool = field(validator=validators.instance_of(bool))
     snowfall: bool = field(validator=validators.instance_of(bool))
     zoom: bool = field(validator=validators.instance_of(bool))
-    effect_settings: EffectSettings | None = field()
+    snow_seed: int = field(validator=validators.instance_of(int))

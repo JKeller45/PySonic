@@ -10,7 +10,6 @@ from Classes import Settings, Frame_Information
 import numpy.typing as npt
 from numba import njit
 from multiprocessing import shared_memory
-from attrs import define, validators, field
 
 def find_by_relative_path(relative_path: str) -> str:
     """
@@ -94,7 +93,7 @@ def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: S
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord - height), settings.color, -1)
     return output_image
 
-def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
+def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
     """
     Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
 
@@ -124,7 +123,7 @@ def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
 
     offset = 0
     if settings.zoom:
-        background = zoom_effect(background, avg_heights[1], settings)
+        background = zoom_effect(background, cummulative_avg_heights[1])
 
     for i in range(num_bars):
         if settings.position == "Right":
@@ -138,8 +137,9 @@ def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
         offset += (settings.width + settings.separation)
 
     if settings.snowfall:
-        snow_matrix = generate_snowfall_matrix(avg_heights[0], -45, settings)
+        snow_matrix = generate_snowfall_matrix(cummulative_avg_heights[0], -45, settings)
         background = create_snowfall(background, snow_matrix, settings.color)
+
     return background
 
 def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_bars: int, settings: Settings) -> npt.ArrayLike:
@@ -158,7 +158,7 @@ def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_ba
     -------
     heights (npt.ArrayLike): the final heights of each bar in the frame
     """
-    bins = np.linspace(math.log10(60), math.log10(22000), num_bars)
+    bins = np.linspace(math.log10(60), math.log10(20000), num_bars)
     for c,_ in enumerate(bins):
         if c == 0:
             continue
@@ -167,13 +167,10 @@ def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_ba
                 continue
             if f > bins[c]:
                 break
-            add_height(heights, c, amp[i], 90, "middle", settings.width, lambda amp, angle: amp * math.sin(math.radians(angle)), settings)
-    heights = np.asarray(heights) / 200_000
-    heights = heights * (settings.frame_rate // 30)
-    heights = heights * (settings.size[1] / 1080)
+            add_height(heights, c, amp[i], 90, "middle", settings.width, lambda amp, angle, group: amp * math.sin(math.radians(angle)), num_bars, settings)
     return np.int64(heights)
 
-def add_height(heights: npt.ArrayLike, group: int, amp: float, angle: int, side: str, width: int, damping: callable, settings: Settings):
+def add_height(heights: npt.ArrayLike, group: int, amp: float, angle: float, side: str, width: int, damping: callable, num_bars: int, settings: Settings):
     """
     Uses a decay function to add height to adjacent bars to give a more natural, non blocky, look to each frame.
 
@@ -191,13 +188,13 @@ def add_height(heights: npt.ArrayLike, group: int, amp: float, angle: int, side:
     if angle <= 0 or group < 0 or group >= len(heights) or amp <= 0:
         return
     heights[group] += amp
-    ang = angle - width * math.log10(group + 1)
+    ang = angle - width * (2 ** ((6/num_bars) * (group - num_bars / 4)))
     if side == "left" or side == "middle":
-        add_height(heights, group - 1, damping(amp, angle), ang, "left", width, damping, settings)
+        add_height(heights, group - 1, damping(amp, angle, group), ang, "left", width, damping, num_bars,settings)
     if side == "right" or side == "middle":
-        add_height(heights, group + 1, damping(amp, angle), ang, "right", width, damping, settings)
+        add_height(heights, group + 1, damping(amp, angle, group), ang, "right", width, damping, num_bars,settings)
 
-def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, avg_heights: float, settings: Settings) -> npt.ArrayLike:
+def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
     existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
     shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
     if background.video:
@@ -233,7 +230,7 @@ def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
         offset += (settings.width + settings.separation)
 
     if settings.snowfall:
-        snow_matrix = generate_snowfall_matrix(avg_heights[0], -45, settings)
+        snow_matrix = generate_snowfall_matrix(cummulative_avg_heights[0], -45, settings)
         background = create_snowfall(background, snow_matrix, settings.color)
 
     return background
@@ -253,23 +250,11 @@ def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, set
         last_coord = (xcoord + settings.width, ycoord - height)
     return last_coord
 
-def upsampling(frame: npt.ArrayLike, sr, settings: Settings) -> npt.ArrayLike:
-    sr.upsample(frame)
-    if settings.SSAA:
-        frame = np.array(im.fromarray(frame).resize((len(frame[0]) // 2, len(frame) // 2), resample=im.ANTIALIAS))
-    return frame
-
-def compress(img: npt.ArrayLike) -> BytesIO:
-    buffer = BytesIO()
-    img = im.fromarray(img)
-    img.save(buffer, "JPEG", quality=95)
-    return buffer
-
-def generate_snowfall_matrix(avg_heights: int, angle: int, settings: Settings) -> npt.ArrayLike:
-    np.random.seed(settings.effect_settings.seed)
+def generate_snowfall_matrix(cummulative_avg_heights: int, angle: int, settings: Settings) -> npt.ArrayLike:
+    np.random.seed(settings.snow_seed)
     matrix = np.random.choice(settings.size[0] * settings.size[1] // 150, size=settings.size)
-    x_shift = int(math.cos(math.radians(angle)) * avg_heights / 40)
-    y_shift = int(math.sin(math.radians(angle)) * avg_heights / 40)
+    x_shift = int(math.cos(math.radians(angle)) * cummulative_avg_heights)
+    y_shift = int(math.sin(math.radians(angle)) * cummulative_avg_heights)
     matrix = np.roll(matrix, x_shift, 1)
     matrix = np.roll(matrix, y_shift, 0)
     return np.argwhere(matrix == 1)
@@ -277,38 +262,19 @@ def generate_snowfall_matrix(avg_heights: int, angle: int, settings: Settings) -
 @njit
 def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, color: tuple[int, int, int]) -> npt.ArrayLike:
     for x in snow_matrix:
-        img = circle(img, x, 3, color)
+        img = circle(img, x, 4, color)
     return img
 
-@njit
-def zoom_effect(img: npt.ArrayLike, zoom_height):
+def zoom_effect(img: npt.ArrayLike, zoom_height: float, coord: tuple[int, int] = None) -> npt.ArrayLike:
     zoom_amt = 1 + zoom_height / 300 * .15
-    img = zoom(img, zoom_amt)
-    return img
-
-def zoom(img: npt.ArrayLike, zoom: float, coord=None) -> npt.ArrayLike:
-    h, w, _ = [zoom * i for i in img.shape]
+    h, w, _ = [zoom_amt * i for i in img.shape]
     if coord is None: 
         cx, cy = w/2, h/2
     else: 
-        cx, cy = [zoom*c for c in coord]
-    img = cv2.resize(img, (0, 0), fx=zoom, fy=zoom)
-    img = img[int(round(cy - h/zoom * .5)) : int(round(cy + h/zoom * .5)), int(round(cx - w/zoom * .5)) : int(round(cx + w/zoom * .5)), :]
-    return img
-
-def calc_difference(base: npt.ArrayLike, img: npt.ArrayLike) -> npt.ArrayLike:
-    diff = np.subtract(img, base)
-    kv = []
-    index = np.argwhere(diff != 0)
-    for i in index:
-        kv.append((i, diff[i[0]][i[1]]))
-    return np.asarray(kv)
-
-def reconstruct(base: npt.ArrayLike, diff: npt.ArrayLike) -> npt.ArrayLike:
-    frame = np.copy(base)
-    for x in diff:
-        frame[x[0][0]][x[0][1]] += x[1]
-    return frame
+        cx, cy = [zoom_amt*c for c in coord]
+    img = cv2.resize(img, (0, 0), fx=zoom_amt, fy=zoom_amt)
+    img = img[int(round(cy - h/zoom_amt * .5)) : int(round(cy + h/zoom_amt * .5)), int(round(cx - w/zoom_amt * .5)) : int(round(cx + w/zoom_amt * .5)), :]
+    return img 
 
 @njit
 def circle(img: npt.ArrayLike, coord: tuple[int, int], radius: int, color: tuple[int, int, int]) -> npt.ArrayLike:
@@ -317,3 +283,51 @@ def circle(img: npt.ArrayLike, coord: tuple[int, int], radius: int, color: tuple
             if (x - coord[0]) ** 2 + (y - coord[1]) ** 2 < radius ** 2 and x < len(img[0]) and y < len(img) and x >= 0 and y >= 0:
                 img[y][x] = color
     return img
+
+def savitzky_golay(y, window_size, order, deriv=0, rate=1):
+    """Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
+    The Savitzky-Golay filter removes high frequency noise from data.
+    It has the advantage of preserving the original shape and
+    features of the signal better than other types of filtering
+    approaches, such as moving averages techniques.
+    Parameters
+    ----------
+    y : array_like, shape (N,)
+        the values of the time history of the signal.
+    window_size : int
+        the length of the window. Must be an odd integer number.
+    order : int
+        the order of the polynomial used in the filtering.
+        Must be less then `window_size` - 1.
+    deriv: int
+        the order of the derivative to compute (default = 0 means only smoothing)
+    Returns
+    -------
+    ys : ndarray, shape (N)
+        the smoothed signal (or it's n-th derivative).
+    Notes
+    -----
+    The Savitzky-Golay is a type of low-pass filter, particularly
+    suited for smoothing noisy data. The main idea behind this
+    approach is to make for each point a least-square fit with a
+    polynomial of high order over a odd-sized window centered at
+    the point.
+    """
+    from math import factorial
+    try:
+        window_size = np.abs(np.int(window_size))
+        order = np.abs(np.int(order))
+    except ValueError:
+        raise ValueError("window_size and order have to be of type int")
+    if window_size % 2 != 1 or window_size < 1:
+        raise TypeError("window_size size must be a positive odd number")
+    if window_size < order + 2:
+        raise TypeError("window_size is too small for the polynomials order")
+    order_range = range(order+1)
+    half_window = (window_size -1) // 2
+    b = np.mat([[k**i for i in order_range] for k in range(-half_window, half_window+1)])
+    m = np.linalg.pinv(b).A[deriv] * rate**deriv * factorial(deriv)
+    firstvals = y[0] - np.abs( y[1:half_window+1][::-1] - y[0] )
+    lastvals = y[-1] + np.abs(y[-half_window-1:-1][::-1] - y[-1])
+    y = np.concatenate((firstvals, y, lastvals))
+    return np.convolve( m[::-1], y, mode='valid')
