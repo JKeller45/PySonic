@@ -1,20 +1,18 @@
 title = "Temporary Config"
 
 [settings]
-FILE = "C:/Users/james/Desktop/All-The-Kids-Are_depressed_remix.wav"
+FILE = "C:/Users/james/Desktop/Jeremy Zucker - supercuts (Lyric Video).webm"
 output = "C:/Users/james/Desktop/"
-length = 5
+length = 20
 size = [1920, 1080]
 color = [255, 255, 255]
-background = "C:/Users/james/Desktop/waves.mp4"
+background = "C:/Users/james/Desktop/pexels-pixabay-417173.jpg" # "C:/Users/james/Desktop/waves.mp4" 
 frame_rate = 30
 width = 6
 separation = 4
 position = "Bottom"
-SSAA = false
 AISS = false
-solar = false
 wave = false
-use_gpu = false
-memory_compression = false
-circular_looped_video = false
+circular_looped_video = true
+snowfall = false
+zoom = true
