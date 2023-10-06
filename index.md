@@ -17,7 +17,7 @@ PySonic is an easy to use python application that create reactive video from an 
 - Different bar placement locations
 - Variable frame rate, resolution, and length
 
-PySonic was created as a replacement for Sonic Candle, a similar application built in Java that was orphaned years ago. The purpose was to improve on some issues with Sonic Candle, like lack of support for a wide range of audio and video formats, while bringing it up to date with a faster render pipeline.
+PySonic was created as a replacement for Sonic Candle, a similar application built in Java that was orphaned years ago. The purpose was to improve on some issues with Sonic Candle, like lack of support for a wide range of audio and video formats, while bringing it up to date with a faster render pipeline. A UI refresh is planned along with a couple other new features.
 
 PySonic is currently in BETA. This is not a stable release. It has been tested, but thorough stability testing is necessary and new features are still planned. If you encounter bugs and glitches, please open an issue on github as it would greatly help me out in testing and polishing.
 
@@ -36,3 +36,7 @@ Below are two videos to showcase some of the capabilities of PySonic. Simply cli
   alt="PySonic Showcase: Avicii - Levels" width="427" height="240"/></a>
 
 </div>
+
+## More Information
+
+PySonic comes bundled with ffmpeg so it accepts almost all audio and video inputs. It will, however, always output mp4 files. Video backgrounds are, at the moment, limited to 5 seconds due to the high memory requirements. While there is an easy solution, I thought the drop in render speed was unacceptable. I am continuing to investigate an alternative solution. The AI supersampling can be slow. It is a cool feature, but due to quality and speed, I recommend using it if you wish to render at 4K but only have 16Gb of memory. Even with these settings, it is still possible to render at a native resolution.
