@@ -17,3 +17,6 @@ In its current state, PySonic only outputs as MP4 files. It accepts most common 
 For those wishing to overlay the react on their own video background, support for transparent videos doesn't exist at the moment, but is planned. You can either use your own video as the background, or render the audio react with a solid (green) background and then chromakey. The chromakey should be very good as there is no AA, bluring, or post processing unless you choose to use the AISS or SSAA options.
 
 I would recommend using in-memory compression, especially at 4K or if you have 16gb of ram or less to be safe, as the hit to render times is minor. In my testing, the CPU render backend is generally faster, but this might change if you have other tasks running on the CPU, have a more power GPU, or have a lower core count CPU.
+
+Sound icon created by Culmbio - Flaticon
+https://www.flaticon.com/free-icons/sound
