@@ -2,122 +2,29 @@
 layout: default
 ---
 
-Text can be **bold**, _italic_, or ~~strikethrough~~.
+# Introducing PySonic
 
-[Link to another page](./another-page.html).
+## About
 
-There should be whitespace between paragraphs.
+PySonic is an easy to use python application that create reactive video from an audio input. With an efficient render pipeline with multithreading, it is capable of rendering high quality video very quickly. Some features include:
 
-There should be whitespace between paragraphs. We recommend including a README, or a file with information about your project.
+- Reactive frequency band bars or waveform
+- Solid color, static image, or video backgrounds
+- Zoom and "snow" effects
+- AI Super Sampling
+- Lots of accepted audio and video formats with ffmpeg
+- Fast rendering with multithreading
+- Different bar placement locations
+- Variable frame rate, resolution, and length
 
-# Header 1
+PySonic was created as a replacement for Sonic Candle, a similar application built in Java that was orphaned years ago. The purpose was to improve on some issues with Sonic Candle, like lack of support for a wide range of audio and video formats, while bringing it up to date with a faster render pipeline.
 
-This is a normal paragraph following a header. GitHub is a code hosting platform for version control and collaboration. It lets you and others work together on projects from anywhere.
+## Showcase
 
-## Header 2
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=DYgUEoXwa1Q
+" target="_blank"><img src="http://img.youtube.com/vi/DYgUEoXwa1Q/0.jpg" 
+alt="PySonic Showcase: Jeremy Zucker - Supercuts" width="240" height="180" border="10" /></a>
 
-> This is a blockquote following a header.
->
-> When something is important enough, you do it even if the odds are not in your favor.
-
-### Header 3
-
-```js
-// Javascript code with syntax highlighting.
-var fun = function lang(l) {
-  dateformat.i18n = require('./lang/' + l)
-  return true;
-}
-```
-
-```ruby
-# Ruby code with syntax highlighting
-GitHubPages::Dependencies.gems.each do |gem, version|
-  s.add_dependency(gem, "= #{version}")
-end
-```
-
-#### Header 4
-
-*   This is an unordered list following a header.
-*   This is an unordered list following a header.
-*   This is an unordered list following a header.
-
-##### Header 5
-
-1.  This is an ordered list following a header.
-2.  This is an ordered list following a header.
-3.  This is an ordered list following a header.
-
-###### Header 6
-
-| head1        | head two          | three |
-|:-------------|:------------------|:------|
-| ok           | good swedish fish | nice  |
-| out of stock | good and plenty   | nice  |
-| ok           | good `oreos`      | hmm   |
-| ok           | good `zoute` drop | yumm  |
-
-### There's a horizontal rule below this.
-
-* * *
-
-### Here is an unordered list:
-
-*   Item foo
-*   Item bar
-*   Item baz
-*   Item zip
-
-### And an ordered list:
-
-1.  Item one
-1.  Item two
-1.  Item three
-1.  Item four
-
-### And a nested list:
-
-- level 1 item
-  - level 2 item
-  - level 2 item
-    - level 3 item
-    - level 3 item
-- level 1 item
-  - level 2 item
-  - level 2 item
-  - level 2 item
-- level 1 item
-  - level 2 item
-  - level 2 item
-- level 1 item
-
-### Small image
-
-![Octocat](https://github.githubassets.com/images/icons/emoji/octocat.png)
-
-### Large image
-
-![Branching](https://guides.github.com/activities/hello-world/branching.png)
-
-
-### Definition lists can be used with HTML syntax.
-
-<dl>
-<dt>Name</dt>
-<dd>Godzilla</dd>
-<dt>Born</dt>
-<dd>1952</dd>
-<dt>Birthplace</dt>
-<dd>Japan</dd>
-<dt>Color</dt>
-<dd>Green</dd>
-</dl>
-
-```
-Long, single-line code blocks should not wrap. They should horizontally scroll if they are too long. This line should be long enough to demonstrate this.
-```
-
-```
-The final element.
-```
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=39qQJ664yg8
+" target="_blank"><img src="http://img.youtube.com/vi/39qQJ664yg8/0.jpg" 
+alt="PySonic Showcase: Avicii - Levels" width="240" height="180" border="10" /></a>
