@@ -29,10 +29,10 @@ Below are two videos to showcase some of the capabilities of PySonic. Simply cli
 
   <a href="http://www.youtube.com/watch?feature=player_embedded&v=DYgUEoXwa1Q
   " target="_blank"><img src="http://img.youtube.com/vi/DYgUEoXwa1Q/0.jpg" 
-  alt="PySonic Showcase: Jeremy Zucker - Supercuts" width="960" height="540" border="10" /></a>
+  alt="PySonic Showcase: Jeremy Zucker - Supercuts" width="848" height="480"/></a>
 
   <a href="http://www.youtube.com/watch?feature=player_embedded&v=39qQJ664yg8
   " target="_blank"><img src="http://img.youtube.com/vi/39qQJ664yg8/0.jpg" 
-  alt="PySonic Showcase: Avicii - Levels" width="960" height="540" border="10" /></a>
+  alt="PySonic Showcase: Avicii - Levels" width="848" height="480"/></a>
 
 </div>
