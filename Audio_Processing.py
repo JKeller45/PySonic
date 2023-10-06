@@ -12,6 +12,7 @@ import os
 from itertools import cycle
 import numpy.typing as npt
 import subprocess
+import warnings
     
 def pick_react(args) -> npt.ArrayLike:
     background, num_bars, heights, avg_heights, settings = args
@@ -46,7 +47,8 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                             snowfall=config["snowfall"], zoom=config["zoom"], snow_seed=int(np.random.rand() * 1000000))
 
     progress.step(1)
-    logging.basicConfig(filename='log.log', level=logging.WARNING)
+    warnings.simplefilter("ignore", np.ComplexWarning)
+    #logging.basicConfig(filename='log.log', level=logging.WARNING)
 
     if settings.AISS:
         settings.size = (settings.size[0] // 2, settings.size[1] // 2)
@@ -54,7 +56,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         settings.separation //= 2
 
     if settings.audio_file[-4:] != ".wav":
-        convert_args = [r"ffmpeg/ffmpeg.exe","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav"]
+        convert_args = [r"ffmpeg/ffmpeg.exe","-y", "-loglevel", "quiet", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav"]
         if subprocess.run(convert_args).returncode == 0:
             settings.audio_file = f"{settings.audio_file}.wav"
         else:
@@ -179,7 +181,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
 
     progress.step(-1)
 
-    combine_cmds = [r"ffmpeg/ffmpeg.exe", "-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+    combine_cmds = [r"ffmpeg/ffmpeg.exe", "-y", "-loglevel", "quiet", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
     try:
         if subprocess.run(combine_cmds).returncode == 0:
             os.remove(f'{settings.output}{file_name}.mp4')
@@ -188,10 +190,11 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
             ret_val.append("Done!")
             return
         else:
-            logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+        #    logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+            pass
     except Exception as e:
-        logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
-    progress.set(0)
+        #logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+        pass
 
 if __name__ == "__main__":
     with open("config.toml", "rb") as f:
