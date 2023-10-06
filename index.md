@@ -19,6 +19,8 @@ PySonic is an easy to use python application that create reactive video from an 
 
 PySonic was created as a replacement for Sonic Candle, a similar application built in Java that was orphaned years ago. The purpose was to improve on some issues with Sonic Candle, like lack of support for a wide range of audio and video formats, while bringing it up to date with a faster render pipeline.
 
+PySonic is currently in BETA. This is not a stable release. It has been tested, but thorough stability testing is necessary and new features are still planned. If you encounter bugs and glitches, please open an issue on github as it would greatly help me out in testing and polishing.
+
 ## Showcase
 
 Below are two videos to showcase some of the capabilities of PySonic. Simply click and you'll be redirected to YouTube.
