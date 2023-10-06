@@ -55,9 +55,10 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         settings.width = max(settings.width // 2, 1)
         settings.separation //= 2
 
+    CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
-        convert_args = [r"ffmpeg/ffmpeg.exe","-y", "-loglevel", "quiet", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav"]
-        if subprocess.run(convert_args).returncode == 0:
+        convert_args = [r"ffmpeg/ffmpeg.exe","-y", "-loglevel", "quiet", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
+        if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
             settings.audio_file = f"{settings.audio_file}.wav"
         else:
             raise IOError("FFMPEG Error: try a different file or file type")
@@ -183,7 +184,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
 
     combine_cmds = [r"ffmpeg/ffmpeg.exe", "-y", "-loglevel", "quiet", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
     try:
-        if subprocess.run(combine_cmds).returncode == 0:
+        if subprocess.run(combine_cmds, creationflags=CREATE_NO_WINDOW).returncode == 0:
             os.remove(f'{settings.output}{file_name}.mp4')
             progress.step(100)
             main.update()
