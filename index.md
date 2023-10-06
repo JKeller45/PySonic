@@ -4,9 +4,13 @@ layout: default
 
 # Introducing PySonic
 
+**The internet is full of online audio react visualizers, but they all place a  watermark over your video. You could pay for and learn Adobe After Effects, but that takes time and isn't what most people are looking for. PySonic is designed to be quick and easy, while still generating high quality videos, without that stupid watermark.**
+
 ## About
 
-PySonic is an easy to use python application that create reactive video from an audio input. With an efficient render pipeline with multithreading, it is capable of rendering high quality video very quickly. Some features include:
+PySonic is an easy to use python application that create reactive video from an audio input. With an efficient render pipeline with multithreading, it is capable of rendering high quality video very quickly. 
+
+Some features include:
 
 - Reactive frequency band bars or waveform
 - Solid color, static image, or video backgrounds
