@@ -1,1 +1,0 @@
-python3 -m PyInstaller -F --noconsole --clean --name="PySonic" --icon="sound-waves.png" --add-data="ui.ui;." --add-data="ESPCN_x2.pb;." --add-data "./ffmpeg/*;./ffmpeg/" Application.py
