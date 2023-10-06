@@ -3,7 +3,7 @@
 ## Overview
 This app is an audio react visualizer built entirely in Python.
 
-The internet is full of online audio react visualizers, but they all place a dumb watermark over your video. You could pay for an learn Adobe After Effects, but that takes time and isn't what most people are looking for. PySonic is designed to be quick and easy, while still generating high quality videos, without that stupid watermark.
+The internet is full of online audio react visualizers, but they all place a watermark over your video. You could pay for and learn Adobe After Effects, but that takes time and isn't what most people are looking for. PySonic is designed to be quick and easy, while still generating high quality videos, without that stupid watermark.
 
 This app is designed to replace Sonic Candle, a very similar app I used for years. It was orphaned 5 years ago, and I've since decided to develop a new version. At the moment, I am more or less at feature parity with Sonic Candle. I also have some new additions, and there are a few other cool features in the works, including transparent background videos. A UI refresh is also planned.
 
