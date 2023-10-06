@@ -3,7 +3,7 @@
 ## Overview
 This app is an audio react visualizer built entirely in Python.
 
-This app is designed to replace Sonic Candle, a very similar app I used for years. It was orphaned 8 years ago, and I've since decided to develop a new version. At the moment, I am more or less at feature parity with Sonic Candle. I also have some new additions, and there are a few other cool features in the works, including transparent background videos. A UI refresh is also planned.
+This app is designed to replace Sonic Candle, a very similar app I used for years. It was orphaned 5 years ago, and I've since decided to develop a new version. At the moment, I am more or less at feature parity with Sonic Candle. I also have some new additions, and there are a few other cool features in the works, including transparent background videos. A UI refresh is also planned.
 
 ## Features
 - Reactive frequency band bars or waveform
