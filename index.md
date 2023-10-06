@@ -27,7 +27,9 @@ PySonic is currently in BETA. This is not a stable release. It has been tested, 
 
 ## Showcase
 
-Below are two videos to showcase some of the capabilities of PySonic. Simply click and you'll be redirected to YouTube:
+Below are two videos to showcase some of the capabilities of PySonic. All of these are strictly made in PySonic, with no external video software used.
+
+Simply click and you'll be redirected to YouTube:
 
 <div style="text-align: center;">
 
