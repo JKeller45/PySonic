@@ -23,12 +23,16 @@ PySonic is currently in BETA. This is not a stable release. It has been tested, 
 
 ## Showcase
 
-Below are two videos to showcase some of the capabilities of PySonic. Simply click and you'll be redirected to YouTube.
+Below are two videos to showcase some of the capabilities of PySonic. Simply click and you'll be redirected to YouTube:
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=DYgUEoXwa1Q
-" target="_blank"><img src="http://img.youtube.com/vi/DYgUEoXwa1Q/0.jpg" 
-alt="PySonic Showcase: Jeremy Zucker - Supercuts" width="240" height="180" border="10" /></a>
+<div style="text-align: center;">
 
-<a href="http://www.youtube.com/watch?feature=player_embedded&v=39qQJ664yg8
-" target="_blank"><img src="http://img.youtube.com/vi/39qQJ664yg8/0.jpg" 
-alt="PySonic Showcase: Avicii - Levels" width="240" height="180" border="10" /></a>
+  <a href="http://www.youtube.com/watch?feature=player_embedded&v=DYgUEoXwa1Q
+  " target="_blank"><img src="http://img.youtube.com/vi/DYgUEoXwa1Q/0.jpg" 
+  alt="PySonic Showcase: Jeremy Zucker - Supercuts" width="960" height="540" border="10" /></a>
+
+  <a href="http://www.youtube.com/watch?feature=player_embedded&v=39qQJ664yg8
+  " target="_blank"><img src="http://img.youtube.com/vi/39qQJ664yg8/0.jpg" 
+  alt="PySonic Showcase: Avicii - Levels" width="960" height="540" border="10" /></a>
+
+</div>
