@@ -21,6 +21,8 @@ PySonic was created as a replacement for Sonic Candle, a similar application bui
 
 ## Showcase
 
+Below are two videos to showcase some of the capabilities of PySonic. Simply click and you'll be redirected to YouTube.
+
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=DYgUEoXwa1Q
 " target="_blank"><img src="http://img.youtube.com/vi/DYgUEoXwa1Q/0.jpg" 
 alt="PySonic Showcase: Jeremy Zucker - Supercuts" width="240" height="180" border="10" /></a>
