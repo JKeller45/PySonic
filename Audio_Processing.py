@@ -30,7 +30,7 @@ def impose_height_diff(last, curr):
             curr[c] = last[c] - 40
     return curr
 
-def render(config: dict, progress, main, pools: list, ret_val: list):
+def render(config: dict, progress, main):
     """
     The main render function
 
@@ -45,8 +45,11 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                             separation=config["separation"], position=config["position"], AISS=config["AISS"], 
                             width=config["width"], wave=config["wave"], circular_looped_video=config["circular_looped_video"], 
                             snowfall=config["snowfall"], zoom=config["zoom"], snow_seed=int(np.random.rand() * 1000000))
+    
+    settings.color = settings.color[::-1]
 
-    progress.step(1)
+    progress.value = .01
+    main.update()
     warnings.simplefilter("ignore", np.ComplexWarning)
     #logging.basicConfig(filename='log.log', level=logging.WARNING)
 
@@ -57,7 +60,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
 
     CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
-        convert_args = [r"ffmpeg/ffmpeg.exe","-y", "-loglevel", "quiet", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
+        convert_args = [r"ffmpeg/bin/ffmpeg.exe","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
             settings.audio_file = f"{settings.audio_file}.wav"
         else:
@@ -71,7 +74,6 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     N = audio.shape[0]
     secs = N / float(fs_rate)
     #print ("secs", secs)
-    Ts = 1.0/fs_rate
 
     if settings.wave:
         settings.separation = 0
@@ -175,27 +177,30 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                 progress_counter += 1
                 if progress_counter / length_in_frames >= .01:
                     progress_counter = 0
-                    progress.step(1)
+                    progress.value += .01
+                    main.update()
                 del frame
             del sr
     result.release()
 
-    progress.step(-1)
+    progress.value = .99
+    main.update()
 
-    combine_cmds = [r"ffmpeg/ffmpeg.exe", "-y", "-loglevel", "quiet", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+    print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
+    combine_cmds = [r"ffmpeg/bin/ffmpeg.exe","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
     try:
         if subprocess.run(combine_cmds, creationflags=CREATE_NO_WINDOW).returncode == 0:
             os.remove(f'{settings.output}{file_name}.mp4')
-            progress.step(100)
-            main.update()
-            ret_val.append("Done!")
-            return
+            os.remove(settings.audio_file)
         else:
         #    logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
             pass
     except Exception as e:
         #logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
         pass
+
+    progress.value = 1
+    main.update()
 
 if __name__ == "__main__":
     with open("config.toml", "rb") as f:
@@ -204,7 +209,7 @@ if __name__ == "__main__":
 
     from time import perf_counter
     start = perf_counter()
-    render(config, Progress_Spoof(), Main_Spoof(), [], [])
+    render(config, Progress_Spoof(), Main_Spoof())
     middle = perf_counter()
 
     print(f"CPU: {middle-start}")

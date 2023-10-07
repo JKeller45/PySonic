@@ -22,6 +22,8 @@ class thread_with_exception(threading.Thread):
             print('Exception raise failure')
 
 class Progress_Spoof:
+    def __init__(self):
+        self.value = 0
     def step(self, *args):
         pass
 
