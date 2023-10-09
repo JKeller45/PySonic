@@ -4,7 +4,7 @@ image:
 - Ubuntu
 
 skip_branch_with_pr: true
-stack: python 3.11
+stack: python 3.11 x64
 
 environment:
   GITHUB_TOKEN:
