@@ -135,6 +135,8 @@ def render(config: dict, progress, main):
     else:
         result = cv2.VideoWriter(f'{settings.output}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), settings.frame_rate, settings.size)
 
+    logging.log(logging.INFO, "Processing Audio...")
+
     audio = audio[:int(fs_rate * length_in_seconds)]
     hop_scale = 2
     frame_size = (fs_rate * length_in_seconds * hop_scale) // (length_in_frames - 1 + hop_scale)
@@ -145,6 +147,8 @@ def render(config: dict, progress, main):
     heights = []
     args = []
 
+    logging.log(logging.INFO, "Calculating Heights...")
+
     for amp in amps:
         heights = [0] * num_bars
         heights = F.bins(freqs, amp, heights, num_bars, settings)
@@ -152,6 +156,8 @@ def render(config: dict, progress, main):
             args.append((Frame_Information(True, "", 0, next(backgrounds)), num_bars, heights, heights.mean(axis=0), settings))
         else:
             args.append((Frame_Information(False, "", 0, 0), num_bars, heights, heights.mean(axis=0), settings))
+
+    logging.log(logging.INFO, "Calculating Average Heights...")
 
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
