@@ -1,0 +1,7 @@
+flet
+numpy
+cv2
+Pillow
+matplotlib
+numba
+scipy

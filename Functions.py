@@ -1,11 +1,7 @@
-import pyfftw.interfaces.scipy_fft as fft
 import numpy as np
-from matplotlib import pyplot as plt
 import math
 import cv2
-from PIL import Image as im
 import sys, os
-from io import BytesIO
 from Classes import Settings, Frame_Information
 import numpy.typing as npt
 from numba import njit
@@ -25,46 +21,6 @@ def find_by_relative_path(relative_path: str) -> str:
     """
     base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base_path, relative_path)
-
-def plot_fft(freqs_side: npt.ArrayLike, FFT_side: npt.ArrayLike):
-    """
-    Plots the FFT with matplotlib
-
-    Parameters
-    ----------
-    freqs_side (np.ndarray): the descrete frequency steps
-    FFT_side (np.ndarray): the amplitudes at each frequency step
-    """
-    p3 = plt.plot(freqs_side, abs(FFT_side), "b")
-    plt.xlabel('Frequency (Hz)')
-    plt.ylabel('Count single-sided')
-    plt.xscale("log")
-    plt.xlim((0,25000))
-    plt.show()
-
-def calc_fft(args: tuple[int, int, int, npt.ArrayLike]):
-    """
-    Calculates FFT for a given range. This method is designed to be used in a multithreaded way.
-
-    Parameters
-    ----------
-    start (int): the starting index to calculate from
-    stop (int): the ending index to calculate
-    step (int): the step size between samples
-    signal (np.ndarray): the audio signal to be processed
-
-    Returns
-    -------
-    freqs_side (np.ndarray): the descrete frequency steps
-    FFT_side (np.ndarray): the amplitudes at each frequency step
-    """
-    start, stop, step, signal = args
-    t = np.arange(start, stop, step)
-    FFT = abs(fft.fft(signal))
-    FFT_side = FFT[:len(FFT) // 2]
-    freqs = fft.fftfreq(signal.size, t[1]-t[0])
-    freqs_side = freqs[:len(FFT) // 2]
-    return freqs_side, FFT_side
 
 def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: Settings, height: int) -> npt.ArrayLike:
     """

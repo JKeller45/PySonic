@@ -60,7 +60,7 @@ def render(config: dict, progress, main):
 
     CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
-        convert_args = [r"ffmpeg/bin/ffmpeg.exe","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
+        convert_args = [r"assets/ffmpeg/bin/ffmpeg.exe","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
             settings.audio_file = f"{settings.audio_file}.wav"
         else:
@@ -166,7 +166,7 @@ def render(config: dict, progress, main):
             sr = None
             if settings.AISS:
                 sr = cv2.dnn_superres.DnnSuperResImpl_create()
-                path = F.find_by_relative_path("ESPCN_x2.pb")
+                path = F.find_by_relative_path("assets\ESPCN_x2.pb")
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
@@ -187,7 +187,7 @@ def render(config: dict, progress, main):
     main.update()
 
     print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
-    combine_cmds = [r"ffmpeg/bin/ffmpeg.exe","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+    combine_cmds = [r"assets/ffmpeg/bin/ffmpeg.exe","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
     try:
         if subprocess.run(combine_cmds, creationflags=CREATE_NO_WINDOW).returncode == 0:
             os.remove(f'{settings.output}{file_name}.mp4')
