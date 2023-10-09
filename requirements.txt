@@ -1,7 +1,10 @@
-flet
-numpy
-opencv-python
-Pillow
-matplotlib
-scipy
-numba
+flet==0.5.2
+numpy==1.24.4
+opencv-python==4.6.0.66
+opencv-contrib-python==4.6.0.66
+Pillow==9.3.0
+pyinstaller==6.0.0
+matplotlib==3.6.2
+scipy==1.9.3
+numba==0.58.0
+attrs==22.2.0
