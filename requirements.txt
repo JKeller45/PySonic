@@ -1,7 +1,7 @@
 flet
 numpy
-cv2
+opencv-python
 Pillow
 matplotlib
-numba
 scipy
+numba
