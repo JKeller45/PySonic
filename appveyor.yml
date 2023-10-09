@@ -9,6 +9,8 @@ stack: python 3.11
 environment:
   GITHUB_TOKEN:
     secure: KOG9MoWPAWH+GRAHwNL8c3b1NgNIJqJd9Y90XLT7ATX+5Od8DOwEDw1pHrYY1mUZ
+  matrix:
+  - TOXENV: py311
 for:
 -
   matrix:
@@ -19,9 +21,6 @@ for:
   - C:\Python311-x64\python.exe -m pip install --upgrade pip
   - C:\Python311-x64\python.exe -m pip install -r requirements.txt
 
-  build_script:
-  - C:\Python311-x64\Scripts\flet.exe pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets;assets"
-
 -
   matrix:
     only:
@@ -30,9 +29,6 @@ for:
   install:
   - python3.11 -m pip install --upgrade pip
   - python3.11 -m pip install -r requirements.txt
-
-  build_script:
-  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
 
 -
   matrix:
@@ -43,8 +39,8 @@ for:
   - python3.11 -m pip install --upgrade pip
   - python3.11 -m pip install -r requirements.txt
 
-  build_script:
-  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
+build_script:
+- flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
 
 test: off
 platform: x64
