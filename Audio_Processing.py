@@ -51,20 +51,22 @@ def render(config: dict, progress, main):
     progress.value = .01
     main.update()
     warnings.simplefilter("ignore", np.ComplexWarning)
-    logging.basicConfig(filename='log.log', level=logging.WARNING)
+    logging.basicConfig(filename='log.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
     if settings.AISS:
         settings.size = (settings.size[0] // 2, settings.size[1] // 2)
         settings.width = max(settings.width // 2, 1)
         settings.separation //= 2
 
+    logging.log("Loading Audio...")
     CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
         convert_args = [r"assets/ffmpeg/bin/ffmpeg.exe","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
-        if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
-            settings.audio_file = f"{settings.audio_file}.wav"
-        else:
-            raise IOError("FFMPEG Error: try a different file or file type")
+        try:
+            if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
+                settings.audio_file = f"{settings.audio_file}.wav"
+        except Exception as e:
+            logging.error(e, exc_info=True)
 
     fs_rate, audio = wavfile.read(settings.audio_file)
     #print ("Frequency sampling", fs_rate)
@@ -91,6 +93,7 @@ def render(config: dict, progress, main):
     backgrounds = None
     background = None
 
+    logging.log("Loading Background...")
     if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
         vid = cv2.VideoCapture(settings.background)
         backgrounds = []
@@ -153,6 +156,7 @@ def render(config: dict, progress, main):
     average_lows = F.savitzky_golay(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
 
+    logging.log("Rendering...")
     with SharedMemoryManager() as smm:
         frame_bg = smm.SharedMemory(size=background.nbytes)
         shared_background = np.ndarray(background.shape, dtype=np.uint8, buffer=frame_bg.buf)
@@ -168,8 +172,8 @@ def render(config: dict, progress, main):
                 sr = cv2.dnn_superres.DnnSuperResImpl_create()
                 try:
                     path = F.find_by_relative_path(r"assets/ESPCN_x2.pb")
-                except FileNotFoundError:
-                    path = F.find_by_relative_path(r"ESPCN_x2.pb")
+                except Exception as e:
+                    logging.error(e, exc_info=True)
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
@@ -189,6 +193,7 @@ def render(config: dict, progress, main):
     progress.value = .99
     main.update()
 
+    logging.log("Combining Audio...")
     print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
     combine_cmds = [r"assets/ffmpeg/bin/ffmpeg.exe","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
     try:
@@ -196,12 +201,13 @@ def render(config: dict, progress, main):
             os.remove(f'{settings.output}{file_name}.mp4')
             os.remove(settings.audio_file)
         else:
-            logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+            logging.error(e, exc_info=True)
             pass
     except Exception as e:
-        logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+        logging.error(e, exc_info=True)
         pass
 
+    logging.log("Done")
     progress.value = 1
     main.update()
 
