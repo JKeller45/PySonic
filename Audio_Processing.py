@@ -51,7 +51,7 @@ def render(config: dict, progress, main):
     progress.value = .01
     main.update()
     warnings.simplefilter("ignore", np.ComplexWarning)
-    #logging.basicConfig(filename='log.log', level=logging.WARNING)
+    logging.basicConfig(filename='log.log', level=logging.WARNING)
 
     if settings.AISS:
         settings.size = (settings.size[0] // 2, settings.size[1] // 2)
@@ -166,7 +166,10 @@ def render(config: dict, progress, main):
             sr = None
             if settings.AISS:
                 sr = cv2.dnn_superres.DnnSuperResImpl_create()
-                path = F.find_by_relative_path("assets\ESPCN_x2.pb")
+                try:
+                    path = F.find_by_relative_path(r"assets/ESPCN_x2.pb")
+                except FileNotFoundError:
+                    path = F.find_by_relative_path(r"ESPCN_x2.pb")
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
@@ -193,10 +196,10 @@ def render(config: dict, progress, main):
             os.remove(f'{settings.output}{file_name}.mp4')
             os.remove(settings.audio_file)
         else:
-        #    logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+            logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
             pass
     except Exception as e:
-        #logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+        logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
         pass
 
     progress.value = 1

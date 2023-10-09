@@ -9,7 +9,7 @@ from multiprocessing import shared_memory
 
 def find_by_relative_path(relative_path: str) -> str:
     """
-    Finds the location of the DNN models when compiled
+    Finds the location of file when compiled
 
     Parameters
     ----------
