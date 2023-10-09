@@ -6,6 +6,46 @@ image:
 skip_branch_with_pr: true
 stack: python 3.11
 
+environment:
+  GITHUB_TOKEN:
+    secure: KOG9MoWPAWH+GRAHwNL8c3b1NgNIJqJd9Y90XLT7ATX+5Od8DOwEDw1pHrYY1mUZ
+for:
+-
+  matrix:
+    only:
+    - image: Visual Studio 2022
+
+  install:
+  - C:\Python311-x64\python.exe -m pip install --upgrade pip
+  - C:\Python311-x64\python.exe -m pip install -r requirements.txt
+
+  build_script:
+  - C:\Python311-x64\Scripts\flet.exe pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets;assets"
+
+-
+  matrix:
+    only:
+    - image: macOS
+
+  install:
+  - python3.11 -m pip install --upgrade pip
+  - python3.11 -m pip install -r requirements.txt
+
+  build_script:
+  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
+
+-
+  matrix:
+    only:
+    - image: Ubuntu
+  
+  install:
+  - python3.11 -m pip install --upgrade pip
+  - python3.11 -m pip install -r requirements.txt
+
+  build_script:
+  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
+
 test: off
 platform: x64
 
@@ -16,11 +56,6 @@ deploy:
   on:
     APPVEYOR_REPO_TAG: true
 
-environment:
-  GITHUB_TOKEN:
-    secure: KOG9MoWPAWH+GRAHwNL8c3b1NgNIJqJd9Y90XLT7ATX+5Od8DOwEDw1pHrYY1mUZ
-
-
 #
 #   Windows package
 # 
@@ -28,18 +63,11 @@ for:
 -
   matrix:
     only:
-    - image: Visual Studio 2019
+    - image: Visual Studio 2022
 
   environment:
     matrix:
     - TOXENV: py311
-  
-  install:
-  - C:\Python311-x64\python.exe -m pip install --upgrade pip
-  - C:\Python311-x64\python.exe -m pip install -r requirements.txt
-
-  build_script:
-  - C:\Python311-x64\Scripts\flet.exe pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets;assets"
 
   after_build:
   - 7z a counter-windows.zip %CD%\dist\*.exe
@@ -55,13 +83,6 @@ for:
     only:
     - image: macOS
 
-  install:
-  - python3.11 -m pip install --upgrade pip
-  - python3.11 -m pip install -r requirements.txt
-
-  build_script:
-  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
-
   after_build:
   - tar -czvf PySonic-macos.tar.gz -C dist PySonic.app
 
@@ -75,13 +96,6 @@ for:
   matrix:
     only:
     - image: Ubuntu
-
-  install:
-  - python3.11 -m pip install --upgrade pip
-  - python3.11 -m pip install -r requirements.txt
-
-  build_script:
-  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
 
   after_build:
   - tar -czvf PySonic-linux.tar.gz -C dist PySonic
