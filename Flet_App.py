@@ -4,6 +4,7 @@ import numpy as np
 from PIL import ImageColor, Image
 from Audio_Processing import render
 from multiprocessing import freeze_support
+import platformdirs
 
 def main(page: ft.Page):
     config = {}
