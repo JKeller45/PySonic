@@ -40,6 +40,8 @@ def render(config: dict, progress, main):
     progress (ttk.Progressbar): the progress bar in the UI. Used for updating
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
+    logging.basicConfig(filename='log.log', level=logging.INFO, format='%(levelname)s %(name)s %(message)s')
+    logging.log(logging.INFO, "Starting Render...")
     settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=np.array(config["size"]),
                             color=tuple(config["color"]), background=config["background"],frame_rate=config["frame_rate"],
                             separation=config["separation"], position=config["position"], AISS=config["AISS"], 
@@ -51,20 +53,21 @@ def render(config: dict, progress, main):
     progress.value = .01
     main.update()
     warnings.simplefilter("ignore", np.ComplexWarning)
-    logging.basicConfig(filename='log.log', level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
     if settings.AISS:
         settings.size = (settings.size[0] // 2, settings.size[1] // 2)
         settings.width = max(settings.width // 2, 1)
         settings.separation //= 2
 
-    logging.log("Loading Audio...")
+    logging.log(logging.INFO, "Loading Audio...")
     CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
         convert_args = [r"assets/ffmpeg/bin/ffmpeg.exe","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         try:
             if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
                 settings.audio_file = f"{settings.audio_file}.wav"
+            else:
+                logging.error("ffmpeg failure", exc_info=True)
         except Exception as e:
             logging.error(e, exc_info=True)
 
@@ -93,7 +96,7 @@ def render(config: dict, progress, main):
     backgrounds = None
     background = None
 
-    logging.log("Loading Background...")
+    logging.log(logging.INFO, "Loading Background...")
     if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
         vid = cv2.VideoCapture(settings.background)
         backgrounds = []
@@ -156,7 +159,7 @@ def render(config: dict, progress, main):
     average_lows = F.savitzky_golay(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
 
-    logging.log("Rendering...")
+    logging.log(logging.INFO, "Rendering...")
     with SharedMemoryManager() as smm:
         frame_bg = smm.SharedMemory(size=background.nbytes)
         shared_background = np.ndarray(background.shape, dtype=np.uint8, buffer=frame_bg.buf)
@@ -193,7 +196,7 @@ def render(config: dict, progress, main):
     progress.value = .99
     main.update()
 
-    logging.log("Combining Audio...")
+    logging.log(logging.INFO, "Combining Audio...")
     print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
     combine_cmds = [r"assets/ffmpeg/bin/ffmpeg.exe","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
     try:
@@ -207,7 +210,7 @@ def render(config: dict, progress, main):
         logging.error(e, exc_info=True)
         pass
 
-    logging.log("Done")
+    logging.log(logging.INFO, "Done")
     progress.value = 1
     main.update()
 
