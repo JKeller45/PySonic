@@ -162,7 +162,7 @@ def render(config: dict, progress, main):
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
     average_lows = [np.mean(arg[2][0:5]) * (settings.size[1] // 5) // max_height for arg in args]
-    average_lows = F.savitzky_golay(average_lows, 17, 7)
+    # average_lows = F.savitzky_golay(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
 
     logging.log(logging.INFO, "Rendering...")

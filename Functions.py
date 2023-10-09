@@ -6,6 +6,7 @@ from Classes import Settings, Frame_Information
 import numpy.typing as npt
 from numba import njit
 from multiprocessing import shared_memory
+from math import factorial
 
 def find_by_relative_path(relative_path: str) -> str:
     """
@@ -269,7 +270,6 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     polynomial of high order over a odd-sized window centered at
     the point.
     """
-    from math import factorial
     try:
         window_size = np.abs(np.int(window_size))
         order = np.abs(np.int(order))
