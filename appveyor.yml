@@ -31,7 +31,7 @@ for:
   - C:\Python311-x64\Scripts\flet.exe pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets;assets"
 
   after_build:
-  - 7z a counter-windows.zip %CD%\dist\*.exe
+  - 7z a PySonic-windows.zip %CD%\dist\*.exe
 
   artifacts:
   - path: PySonic-windows.zip
@@ -52,10 +52,10 @@ for:
   - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
 
   after_build:
-  - tar -czvf PySonic-macos.tar.gz -C dist PySonic.app
+  - zip -r PySonic-macos.zip dist/PySonic.app
 
   artifacts:
-  - path: PySonic-macos.tar.gz
+  - path: PySonic-macos.zip
 
 #
 #   Linux package
