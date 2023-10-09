@@ -35,7 +35,9 @@ for:
     only:
     - image: Visual Studio 2019
 
-  environment: Python 3.11.5 x64
+  environment:
+    matrix:
+    - TOXENV: py311
 
   after_build:
   - 7z a counter-windows.zip %CD%\dist\*.exe
@@ -64,8 +66,6 @@ for:
   matrix:
     only:
     - image: Ubuntu
-
-  environment: Python 3.11.4
 
   after_build:
   - tar -czvf PySonic-linux.tar.gz -C dist PySonic
