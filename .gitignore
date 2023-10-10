@@ -4,3 +4,8 @@ Gemfile.lock
 *.gem
 .jekyll-cache
 .jekyll-cache
+
+build/
+dist/
+assets/ffmpeg
+__pycache__/

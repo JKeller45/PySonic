@@ -21,7 +21,7 @@ Some features include:
 - Different bar placement locations
 - Variable frame rate, resolution, and length
 
-PySonic was created as a replacement for Sonic Candle, a similar application built in Java that was orphaned years ago. The purpose was to improve on some issues with Sonic Candle, like lack of support for a wide range of audio and video formats, while bringing it up to date with a faster render pipeline. A UI refresh is planned along with a couple other new features.
+PySonic was created as a replacement for Sonic Candle, a similar application built in Java that was orphaned years ago. The purpose was to improve on some issues with Sonic Candle, like lack of support for a wide range of audio and video formats, while bringing it up to date with a faster render pipeline.
 
 PySonic is currently in BETA. This is not a stable release. It has been tested, but thorough stability testing is necessary and new features are still planned. If you encounter bugs and glitches, please open an issue on github as it would greatly help me out in testing and polishing.
 
@@ -43,6 +43,39 @@ Simply click and you'll be redirected to YouTube:
 
 </div>
 
+## Roadmap
+
+This is not meant to be a difinitive roadmap with all planned features exactly when they will release. It is intended to be a guide for approximately when specific upcoming features should be available. It is subject to change.
+
+#### 0.9 - Released!
+
+- New Flet (Flutter) based GUI
+- Preparation for continuous integration
+- Many bugfixes
+- Improvements for future macOS and Linux releases
+
+#### 1.0 - Under Development
+
+- MacOS and Linux versions
+- Continuous integration for Windows, macOS, and Linux
+- Automated stability testing
+
+#### 1.1
+
+- Transparent video backgrounds
+- Reintroduction of color picker (removed during the switch to Flet)
+- Additional waveform react placements
+
+#### 1.2
+
+- Longer video backgrounds
+- Render queue
+- Render previews
+
+#### 1.3
+
+- Real-time render display
+
 ## More Information
 
-PySonic comes bundled with ffmpeg so it accepts almost all audio and video inputs. It will, however, always output mp4 files. Video backgrounds are, at the moment, limited to 5 seconds due to the high memory requirements. While there is an easy solution, I thought the drop in render speed was unacceptable. I am continuing to investigate an alternative solution. The AI supersampling can be slow. It is a cool feature, but due to quality and speed, I recommend using it if you wish to render at 4K but only have 16Gb of memory. Even with these settings, it is still possible to render at a native resolution.
+PySonic comes bundled with ffmpeg so it accepts almost all audio and video inputs. It will, however, always output mp4 files. Video backgrounds are, at the moment, limited to 5 seconds due to the high memory requirements. While there is an easy solution, I thought the drop in render speed it came with was unacceptable. I am continuing to investigate an alternative solution. The AI supersampling can be slow. It is a cool feature, but due to quality and speed, I recommend using it if you wish to render at 4K but only have 16Gb of memory. Even with these settings, it is still possible to render at a native resolution.
