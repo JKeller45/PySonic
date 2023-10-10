@@ -40,8 +40,8 @@ def render(config: dict, progress, main):
     progress (ttk.Progressbar): the progress bar in the UI. Used for updating
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
-    logging.basicConfig(filename='log.log', level=logging.INFO, format='%(levelname)s %(name)s %(message)s')
-    logging.log(logging.INFO, "Starting Render...")
+    # logging.basicConfig(filename='log.log', level=logging.INFO, format='%(levelname)s %(name)s %(message)s')
+    # logging.log(logging.INFO, "Starting Render...")
     settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=np.array(config["size"]),
                             color=tuple(config["color"]), background=config["background"],frame_rate=config["frame_rate"],
                             separation=config["separation"], position=config["position"], AISS=config["AISS"], 
@@ -59,17 +59,19 @@ def render(config: dict, progress, main):
         settings.width = max(settings.width // 2, 1)
         settings.separation //= 2
 
-    logging.log(logging.INFO, "Loading Audio...")
+    # logging.log(logging.INFO, "Loading Audio...")
     CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
-        convert_args = [r"assets/ffmpeg/bin/ffmpeg.exe","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
+        convert_args = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         try:
             if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
                 settings.audio_file = f"{settings.audio_file}.wav"
             else:
-                logging.error("ffmpeg failure", exc_info=True)
+                pass
+                # logging.error("ffmpeg failure", exc_info=True)
         except Exception as e:
-            logging.error(e, exc_info=True)
+            # logging.error(e, exc_info=True)
+            pass
 
     fs_rate, audio = wavfile.read(settings.audio_file)
     #print ("Frequency sampling", fs_rate)
@@ -96,7 +98,7 @@ def render(config: dict, progress, main):
     backgrounds = None
     background = None
 
-    logging.log(logging.INFO, "Loading Background...")
+    # logging.log(logging.INFO, "Loading Background...")
     if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
         vid = cv2.VideoCapture(settings.background)
         backgrounds = []
@@ -135,7 +137,7 @@ def render(config: dict, progress, main):
     else:
         result = cv2.VideoWriter(f'{settings.output}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), settings.frame_rate, settings.size)
 
-    logging.log(logging.INFO, "Processing Audio...")
+    # logging.log(logging.INFO, "Processing Audio...")
 
     audio = audio[:int(fs_rate * length_in_seconds)]
     hop_scale = 2
@@ -147,7 +149,7 @@ def render(config: dict, progress, main):
     heights = []
     args = []
 
-    logging.log(logging.INFO, "Calculating Heights...")
+    # logging.log(logging.INFO, "Calculating Heights...")
 
     for amp in amps:
         heights = [0] * num_bars
@@ -157,7 +159,7 @@ def render(config: dict, progress, main):
         else:
             args.append((Frame_Information(False, "", 0, 0), num_bars, heights, heights.mean(axis=0), settings))
 
-    logging.log(logging.INFO, "Calculating Average Heights...")
+    # logging.log(logging.INFO, "Calculating Average Heights...")
 
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
@@ -165,7 +167,7 @@ def render(config: dict, progress, main):
     # average_lows = F.savitzky_golay(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
 
-    logging.log(logging.INFO, "Rendering...")
+    # logging.log(logging.INFO, "Rendering...")
     with SharedMemoryManager() as smm:
         frame_bg = smm.SharedMemory(size=background.nbytes)
         shared_background = np.ndarray(background.shape, dtype=np.uint8, buffer=frame_bg.buf)
@@ -182,7 +184,8 @@ def render(config: dict, progress, main):
                 try:
                     path = F.find_by_relative_path(r"assets/ESPCN_x2.pb")
                 except Exception as e:
-                    logging.error(e, exc_info=True)
+                    pass
+                    # logging.error(e, exc_info=True)
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
@@ -202,21 +205,21 @@ def render(config: dict, progress, main):
     progress.value = .99
     main.update()
 
-    logging.log(logging.INFO, "Combining Audio...")
+    # logging.log(logging.INFO, "Combining Audio...")
     print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
-    combine_cmds = [r"assets/ffmpeg/bin/ffmpeg.exe","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+    combine_cmds = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
     try:
         if subprocess.run(combine_cmds, creationflags=CREATE_NO_WINDOW).returncode == 0:
             os.remove(f'{settings.output}{file_name}.mp4')
             os.remove(settings.audio_file)
         else:
-            logging.error(e, exc_info=True)
+            # logging.error(e, exc_info=True)
             pass
     except Exception as e:
-        logging.error(e, exc_info=True)
+        # logging.error(e, exc_info=True)
         pass
 
-    logging.log(logging.INFO, "Done")
+    # logging.log(logging.INFO, "Done")
     progress.value = 1
     main.update()
 
