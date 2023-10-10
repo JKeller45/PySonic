@@ -67,8 +67,8 @@ def render(config: dict, progress, main):
             if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
                 settings.audio_file = f"{settings.audio_file}.wav"
             else:
-                pass
                 # logging.error("ffmpeg failure", exc_info=True)
+                pass
         except Exception as e:
             # logging.error(e, exc_info=True)
             pass
@@ -163,8 +163,8 @@ def render(config: dict, progress, main):
 
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
-    average_lows = [np.mean(arg[2][0:5]) * (settings.size[1] // 5) // max_height for arg in args]
-    average_lows = F.savitzky_golay(average_lows, 17, 7)
+    average_lows = [np.mean(arg[2][0:4 * num_bars // 100]) * (settings.size[1] // 5) // max_height for arg in args]
+    average_lows = signal.savgol_filter(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
 
     # logging.log(logging.INFO, "Rendering...")
@@ -184,8 +184,8 @@ def render(config: dict, progress, main):
                 try:
                     path = F.find_by_relative_path(r"assets/ESPCN_x2.pb")
                 except Exception as e:
-                    pass
                     # logging.error(e, exc_info=True)
+                    pass
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
