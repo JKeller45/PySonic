@@ -45,7 +45,7 @@ Simply click and you'll be redirected to YouTube:
 
 ## Roadmap
 
-This is not meant to be a difinitive roadmap with all planned features exactly when they will release. It is intended to be a guide for approximately when specific upcoming features should be available. It is subject to change.
+This is not meant to be a definitive roadmap with all planned features. It is intended to be a guide for approximately when specific upcoming features should be available. It is subject to change.
 
 #### 0.9 - Released!
 
