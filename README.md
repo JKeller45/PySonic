@@ -21,7 +21,7 @@ This app is designed to replace Sonic Candle, a very similar app I used for year
 PySonic comes bundled with ffmpeg so it accepts almost all audio and video inputs. It will, however, always output mp4 files. Video backgrounds are, at the moment, limited to 5 seconds due to the high memory requirements. While there is an easy solution, I thought the drop in render speed was unacceptable. I am continuing to investigate an alternative solution. The AI supersampling can be slow. It is a cool feature, but due to quality and speed, I recommend using it if you wish to render at 4K but only have 16Gb of memory. Even with these settings, it is still possible to render at a native resolution.
 
 ## A note on operating systems
-At the moment, I have only built an executable for Windows. Due to some idiosyncrasies in the compiling program, I can only compile versions for my OS. I am investigating whether virtual machines will work. For now, I see no reason why PySonic would not work with WineHQ, however, this is not supported officially.
+At the moment, I have only built an executable for Windows. For the future 1.0 release, I will hopefully have both Linux and MacOS applications. For now, I see no reason why PySonic would not work with WineHQ, however, this is not supported officially.
 
 ## Credits
 Sound icon created by Culmbio - Flaticon
