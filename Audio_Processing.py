@@ -30,7 +30,7 @@ def impose_height_diff(last, curr):
             curr[c] = last[c] - 40
     return curr
 
-def render(config: dict, progress, main, pools: list, ret_val: list):
+def render(config: dict, progress, main):
     """
     The main render function
 
@@ -40,28 +40,38 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     progress (ttk.Progressbar): the progress bar in the UI. Used for updating
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
+    # logging.basicConfig(filename='log.log', level=logging.INFO, format='%(levelname)s %(name)s %(message)s')
+    # logging.log(logging.INFO, "Starting Render...")
     settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=np.array(config["size"]),
                             color=tuple(config["color"]), background=config["background"],frame_rate=config["frame_rate"],
                             separation=config["separation"], position=config["position"], AISS=config["AISS"], 
                             width=config["width"], wave=config["wave"], circular_looped_video=config["circular_looped_video"], 
                             snowfall=config["snowfall"], zoom=config["zoom"], snow_seed=int(np.random.rand() * 1000000))
+    
+    settings.color = settings.color[::-1]
 
-    progress.step(1)
+    progress.value = .01
+    main.update()
     warnings.simplefilter("ignore", np.ComplexWarning)
-    #logging.basicConfig(filename='log.log', level=logging.WARNING)
 
     if settings.AISS:
         settings.size = (settings.size[0] // 2, settings.size[1] // 2)
         settings.width = max(settings.width // 2, 1)
         settings.separation //= 2
 
+    # logging.log(logging.INFO, "Loading Audio...")
     CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
-        convert_args = [r"ffmpeg/ffmpeg.exe","-y", "-loglevel", "quiet", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
-        if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
-            settings.audio_file = f"{settings.audio_file}.wav"
-        else:
-            raise IOError("FFMPEG Error: try a different file or file type")
+        convert_args = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
+        try:
+            if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
+                settings.audio_file = f"{settings.audio_file}.wav"
+            else:
+                # logging.error("ffmpeg failure", exc_info=True)
+                pass
+        except Exception as e:
+            # logging.error(e, exc_info=True)
+            pass
 
     fs_rate, audio = wavfile.read(settings.audio_file)
     #print ("Frequency sampling", fs_rate)
@@ -71,7 +81,6 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     N = audio.shape[0]
     secs = N / float(fs_rate)
     #print ("secs", secs)
-    Ts = 1.0/fs_rate
 
     if settings.wave:
         settings.separation = 0
@@ -89,6 +98,7 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     backgrounds = None
     background = None
 
+    # logging.log(logging.INFO, "Loading Background...")
     if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
         vid = cv2.VideoCapture(settings.background)
         backgrounds = []
@@ -127,6 +137,8 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     else:
         result = cv2.VideoWriter(f'{settings.output}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), settings.frame_rate, settings.size)
 
+    # logging.log(logging.INFO, "Processing Audio...")
+
     audio = audio[:int(fs_rate * length_in_seconds)]
     hop_scale = 2
     frame_size = (fs_rate * length_in_seconds * hop_scale) // (length_in_frames - 1 + hop_scale)
@@ -137,6 +149,8 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
     heights = []
     args = []
 
+    # logging.log(logging.INFO, "Calculating Heights...")
+
     for amp in amps:
         heights = [0] * num_bars
         heights = F.bins(freqs, amp, heights, num_bars, settings)
@@ -145,12 +159,15 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
         else:
             args.append((Frame_Information(False, "", 0, 0), num_bars, heights, heights.mean(axis=0), settings))
 
+    # logging.log(logging.INFO, "Calculating Average Heights...")
+
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
-    average_lows = [np.mean(arg[2][0:5]) * (settings.size[1] // 5) // max_height for arg in args]
-    average_lows = F.savitzky_golay(average_lows, 17, 7)
+    average_lows = [np.mean(arg[2][0:4 * num_bars // 100]) * (settings.size[1] // 5) // max_height for arg in args]
+    average_lows = signal.savgol_filter(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
 
+    # logging.log(logging.INFO, "Rendering...")
     with SharedMemoryManager() as smm:
         frame_bg = smm.SharedMemory(size=background.nbytes)
         shared_background = np.ndarray(background.shape, dtype=np.uint8, buffer=frame_bg.buf)
@@ -164,7 +181,11 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
             sr = None
             if settings.AISS:
                 sr = cv2.dnn_superres.DnnSuperResImpl_create()
-                path = F.find_by_relative_path("ESPCN_x2.pb")
+                try:
+                    path = F.find_by_relative_path(r"assets/ESPCN_x2.pb")
+                except Exception as e:
+                    # logging.error(e, exc_info=True)
+                    pass
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
@@ -175,27 +196,32 @@ def render(config: dict, progress, main, pools: list, ret_val: list):
                 progress_counter += 1
                 if progress_counter / length_in_frames >= .01:
                     progress_counter = 0
-                    progress.step(1)
+                    progress.value += .01
+                    main.update()
                 del frame
             del sr
     result.release()
 
-    progress.step(-1)
+    progress.value = .99
+    main.update()
 
-    combine_cmds = [r"ffmpeg/ffmpeg.exe", "-y", "-loglevel", "quiet", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+    # logging.log(logging.INFO, "Combining Audio...")
+    print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
+    combine_cmds = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
     try:
         if subprocess.run(combine_cmds, creationflags=CREATE_NO_WINDOW).returncode == 0:
             os.remove(f'{settings.output}{file_name}.mp4')
-            progress.step(100)
-            main.update()
-            ret_val.append("Done!")
-            return
+            os.remove(settings.audio_file)
         else:
-        #    logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+            # logging.error(e, exc_info=True)
             pass
     except Exception as e:
-        #logging.error("FFMPEG Error, check your FFMPEG distro", exc_info=True)
+        # logging.error(e, exc_info=True)
         pass
+
+    # logging.log(logging.INFO, "Done")
+    progress.value = 1
+    main.update()
 
 if __name__ == "__main__":
     with open("config.toml", "rb") as f:
@@ -204,7 +230,7 @@ if __name__ == "__main__":
 
     from time import perf_counter
     start = perf_counter()
-    render(config, Progress_Spoof(), Main_Spoof(), [], [])
+    render(config, Progress_Spoof(), Main_Spoof())
     middle = perf_counter()
 
     print(f"CPU: {middle-start}")

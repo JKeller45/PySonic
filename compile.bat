@@ -1,1 +1,1 @@
-python3 -m PyInstaller -F --noconsole --clean --upx-dir="upx-4.1.0-win64\upx.exe" --name="PySonic" --icon="sound-waves.png" --add-data="ui.ui;." --add-data="ESPCN_x2.pb;." --add-data "./ffmpeg/*;./ffmpeg/" Application.py
+"C:\Users\james\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.11_qbz5n2kfra8p0\LocalCache\local-packages\Python311\Scripts\flet.exe" pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets;assets"
