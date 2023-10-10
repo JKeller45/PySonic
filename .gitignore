@@ -130,3 +130,5 @@ dmypy.json
 
 # upx
 upx-4.1.0-win64
+
+assets/ffmpeg
