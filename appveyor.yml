@@ -33,7 +33,7 @@ for:
   test_script:
   - C:\Python311-x64\python.exe pysonic-testing.py
 
-  after_test::
+  after_test:
   - 7z a PySonic-windows.zip %CD%\dist\*.exe
 
   artifacts:
