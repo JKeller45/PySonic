@@ -76,6 +76,8 @@ This is not meant to be a definitive roadmap with all planned features. It is in
 
 - Real-time render display
 
-## More Information
+## Installation Guide:
+PySonic relies on FFmpeg, however, due to licensing, you must install it yourself. On Windows, FFmpeg can be installed with the Chocolatey package manager, or with a static build. On Mac, I highly recommend using the MacPorts or Homebrew package managers to install. On Linux, apt-get/apt is the preferred way. Check out these install guides: [Windows Static Build](https://phoenixnap.com/kb/ffmpeg-windows) or [Chocolatety](https://community.chocolatey.org/packages/ffmpeg-shared), [Mac](https://phoenixnap.com/kb/ffmpeg-mac), [Linux](https://www.hostinger.com/tutorials/how-to-install-ffmpeg). 
 
-PySonic comes bundled with ffmpeg so it accepts almost all audio and video inputs. It will, however, always output mp4 files. Video backgrounds are, at the moment, limited to 5 seconds due to the high memory requirements. While there is an easy solution, I thought the drop in render speed it came with was unacceptable. I am continuing to investigate an alternative solution. The AI supersampling can be slow. It is a cool feature, but due to quality and speed, I recommend using it if you wish to render at 4K but only have 16Gb of memory. Even with these settings, it is still possible to render at a native resolution.
+## More Information
+Video backgrounds are, at the moment, limited to 5 seconds due to the high memory requirements. While there is an easy solution, the drop in render speed was unacceptable. I am continuing to investigate an alternative solution. The AI supersampling can be slow. It is a cool feature, but due to quality and speed, I recommend using it if you wish to render at 4K but only have 16Gb of memory. Even with these settings, it is still possible to render at a native resolution.
