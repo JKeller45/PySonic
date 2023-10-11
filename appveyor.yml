@@ -1,7 +1,7 @@
 image:
 - Visual Studio 2022
-- macOS
-- Ubuntu
+- macos-monterey
+- Ubuntu2004
 
 skip_branch_with_pr: true
 stack: python 3.11
@@ -46,7 +46,7 @@ for:
 -
   matrix:
     only:
-    - image: macOS
+    - image: macos-monterey
 
   install:
     - python3.11 -m pip install --upgrade pip
@@ -71,7 +71,7 @@ for:
 -
   matrix:
     only:
-    - image: Ubuntu
+    - image: Ubuntu2004
 
   install:
     - python3.11 -m pip install --upgrade pip
