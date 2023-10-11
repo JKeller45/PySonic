@@ -23,6 +23,10 @@ if __name__ == "__main__":
         if mse > .03:
             print(mse)
         assert mse < 0.05, "Video files do not match!"
+        ret1, frame1 = video.read()
+        ret2, frame2 = comparison.read()
+        if not ret1 and ret2 or ret1 and not ret2:
+            raise Exception("Video files not the same length!")
     video.release()
     comparison.release()
     print("Validation complete!")
