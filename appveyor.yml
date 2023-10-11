@@ -31,9 +31,9 @@ for:
   - C:\Python311-x64\Scripts\flet.exe pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets;assets"
 
   test_script:
-  - python3.11 -m pysonic-testing.py
+  - C:\Python311-x64\python.exe pysonic-testing.py
 
-  after_build:
+  after_test::
   - 7z a PySonic-windows.zip %CD%\dist\*.exe
 
   artifacts:
@@ -55,9 +55,9 @@ for:
   - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets-mac:assets"
 
   test_script:
-  - python3.11 -m pysonic-testing.py
+  - python3.11 pysonic-testing.py
 
-  after_build:
+  after_test:
   - zip -r PySonic-macos.zip dist/PySonic.app
 
   artifacts:
