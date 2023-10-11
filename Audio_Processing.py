@@ -71,7 +71,7 @@ def render(config: dict, progress, main):
                 # logging.error("ffmpeg failure", exc_info=True)
                 pass
         except Exception as e:
-            # logging.error(e, exc_info=True)
+            raise e
             pass
 
     fs_rate, audio = wavfile.read(settings.audio_file)
@@ -219,7 +219,7 @@ def render(config: dict, progress, main):
             # logging.error(e, exc_info=True)
             pass
     except Exception as e:
-        # logging.error(e, exc_info=True)
+        raise e
         pass
 
     # logging.log(logging.INFO, "Done")

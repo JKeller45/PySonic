@@ -54,6 +54,7 @@ for:
     - brew install ffmpeg
     - brew reinstall libidn2
     - brew reinstall libunistring
+    - ffmpeg -h
 
   build_script:
   - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
@@ -80,11 +81,15 @@ for:
     - python3.11 -m pip install -r requirements.txt
     - sudo apt --assume-yes update && sudo apt --assume-yes upgrade
     - sudo apt --assume-yes install ffmpeg
+    - ffmpeg -h
 
   build_script:
   - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
 
-  after_build:
+  test_script:
+  - python3.11 pysonic-testing.py
+
+  after_test:
   - tar -czvf PySonic-linux.tar.gz -C dist PySonic
 
   artifacts:
