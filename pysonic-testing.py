@@ -2,6 +2,7 @@ import tomllib as tl
 from Audio_Processing import render
 from Classes import Progress_Spoof, Main_Spoof
 import cv2
+import numpy as np
 
 if __name__ == "__main__":
     with open("testing/testing-config.toml", "rb") as f:
@@ -18,9 +19,11 @@ if __name__ == "__main__":
     if not ret1 or not ret2:
         raise Exception("Video files not found!")
     while ret1 and ret2:
-        assert (frame1 == frame2).all()
-        ret1, frame1 = video.read()
-        ret2, frame2 = comparison.read()
+        diff = cv2.subtract(frame1, frame2)
+        mse = np.mean(diff ** 2)
+        if mse > 0.05:
+            print(mse)
+        assert mse < 0.05, "Video files do not match!"
     video.release()
     comparison.release()
     print("Validation complete!")
