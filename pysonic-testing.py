@@ -19,9 +19,8 @@ if __name__ == "__main__":
     if not ret1 or not ret2:
         raise Exception("Video files not found!")
     while ret1 and ret2:
-        diff = cv2.subtract(frame1, frame2)
-        mse = np.mean(diff ** 2)
-        if mse > 0.05:
+        mse = np.sum(np.square(np.subtract(cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY).flatten(), cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY).flatten()))) / frame1.size
+        if mse > .03:
             print(mse)
         assert mse < 0.05, "Video files do not match!"
     video.release()
