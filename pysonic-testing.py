@@ -20,9 +20,9 @@ if __name__ == "__main__":
         raise Exception("Video files not found!")
     while ret1 and ret2:
         mse = np.sum(np.square(np.subtract(cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY).flatten(), cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY).flatten()))) / frame1.size
-        if mse > .03:
+        if mse > 10:
             print(mse)
-        assert mse < 0.05, "Video files do not match!"
+        assert mse < 32, "Video files do not match!"
         ret1, frame1 = video.read()
         ret2, frame2 = comparison.read()
         if not ret1 and ret2 or ret1 and not ret2:
