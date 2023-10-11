@@ -1,7 +1,7 @@
 image:
 - Visual Studio 2022
 - macOS
-- Ubuntu
+# - Ubuntu
 
 skip_branch_with_pr: true
 stack: python 3.11
@@ -30,6 +30,9 @@ for:
   build_script:
   - C:\Python311-x64\Scripts\flet.exe pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets;assets"
 
+  test_script:
+  - python3.11 -m pysonic-testing.py
+
   after_build:
   - 7z a PySonic-windows.zip %CD%\dist\*.exe
 
@@ -51,32 +54,35 @@ for:
   build_script:
   - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets-mac:assets"
 
+  test_script:
+  - python3.11 -m pysonic-testing.py
+
   after_build:
   - zip -r PySonic-macos.zip dist/PySonic.app
 
   artifacts:
   - path: PySonic-macos.zip
 
-#
-#   Linux package
-# 
--
-  matrix:
-    only:
-    - image: Ubuntu
+# #
+# #   Linux package
+# # 
+# -
+#   matrix:
+#     only:
+#     - image: Ubuntu
 
-  install:
-    - python3.11 -m pip install --upgrade pip
-    - python3.11 -m pip install -r requirements.txt
+#   install:
+#     - python3.11 -m pip install --upgrade pip
+#     - python3.11 -m pip install -r requirements.txt
 
-  build_script:
-  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
+#   build_script:
+#   - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
 
-  after_build:
-  - tar -czvf PySonic-linux.tar.gz -C dist PySonic
+#   after_build:
+#   - tar -czvf PySonic-linux.tar.gz -C dist PySonic
 
-  artifacts:
-  - path: PySonic-linux.tar.gz
+#   artifacts:
+#   - path: PySonic-linux.tar.gz
 
 test: off
 platform: x64
