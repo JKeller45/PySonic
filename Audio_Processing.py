@@ -54,6 +54,7 @@ def render(config: dict, progress, main):
     progress.value = .01
     main.update()
     warnings.simplefilter("ignore", np.ComplexWarning)
+    non_wave_input = False
 
     if settings.AISS:
         settings.size = (settings.size[0] // 2, settings.size[1] // 2)
@@ -64,13 +65,15 @@ def render(config: dict, progress, main):
     si = subprocess.STARTUPINFO()
     si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     if settings.audio_file[-4:] != ".wav":
+        non_wave_input = True
         convert_args = ["ffmpeg","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         try:
-            if subprocess.run(convert_args, startupinfo=si).returncode == 0:
-                settings.audio_file = f"{settings.audio_file}.wav"
+            if platform == "win32":
+                if subprocess.run(convert_args, startupinfo=si).returncode == 0:
+                    settings.audio_file = f"{settings.audio_file}.wav"
             else:
-                # logging.error("ffmpeg failure", exc_info=True)
-                pass
+                if subprocess.run(convert_args).returncode == 0:
+                    settings.audio_file = f"{settings.audio_file}.wav"
         except Exception as e:
             raise e
             pass
@@ -213,12 +216,16 @@ def render(config: dict, progress, main):
     combine_cmds = ["ffmpeg","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
 
     try:
-        if subprocess.run(combine_cmds, startupinfo=si).returncode == 0:
-            os.remove(f'{settings.output}{file_name}.mp4')
-            os.remove(settings.audio_file)
+        if platform == "win32":
+            if subprocess.run(combine_cmds, startupinfo=si).returncode == 0:
+                os.remove(f'{settings.output}{file_name}.mp4')
+                if non_wave_input:
+                    os.remove(settings.audio_file)
         else:
-            # logging.error(e, exc_info=True)
-            pass
+            if subprocess.run(combine_cmds).returncode == 0:
+                os.remove(f'{settings.output}{file_name}.mp4')
+                if non_wave_input:
+                    os.remove(settings.audio_file)
     except Exception as e:
         raise e
         pass
