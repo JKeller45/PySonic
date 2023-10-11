@@ -61,11 +61,12 @@ def render(config: dict, progress, main):
         settings.separation //= 2
 
     # logging.log(logging.INFO, "Loading Audio...")
-    CREATE_NO_WINDOW = 0x08000000
+    si = subprocess.STARTUPINFO()
+    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     if settings.audio_file[-4:] != ".wav":
         convert_args = ["ffmpeg","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         try:
-            if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
+            if subprocess.run(convert_args, startupinfo=si).returncode == 0:
                 settings.audio_file = f"{settings.audio_file}.wav"
             else:
                 # logging.error("ffmpeg failure", exc_info=True)
@@ -212,7 +213,7 @@ def render(config: dict, progress, main):
     combine_cmds = ["ffmpeg","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
 
     try:
-        if subprocess.run(combine_cmds, creationflags=CREATE_NO_WINDOW).returncode == 0:
+        if subprocess.run(combine_cmds, startupinfo=si).returncode == 0:
             os.remove(f'{settings.output}{file_name}.mp4')
             os.remove(settings.audio_file)
         else:
