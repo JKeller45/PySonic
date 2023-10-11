@@ -13,6 +13,7 @@ from itertools import cycle
 import numpy.typing as npt
 import subprocess
 import warnings
+from sys import platform
     
 def pick_react(args) -> npt.ArrayLike:
     background, num_bars, heights, avg_heights, settings = args
@@ -62,7 +63,10 @@ def render(config: dict, progress, main):
     # logging.log(logging.INFO, "Loading Audio...")
     CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
-        convert_args = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
+        if platform == "win32":
+            convert_args = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
+        elif platform == "darwin":
+            convert_args = [F.find_by_relative_path(r"assets/ffmpeg/bin/ffmpeg"),"-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         try:
             if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
                 settings.audio_file = f"{settings.audio_file}.wav"
@@ -208,7 +212,11 @@ def render(config: dict, progress, main):
 
     # logging.log(logging.INFO, "Combining Audio...")
     print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
-    combine_cmds = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+    if platform == "win32":
+        combine_cmds = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+    elif platform == "darwin":
+        combine_cmds = [F.find_by_relative_path(r"assets/ffmpeg\bin/ffmpeg"),"-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+
     try:
         if subprocess.run(combine_cmds, creationflags=CREATE_NO_WINDOW).returncode == 0:
             os.remove(f'{settings.output}{file_name}.mp4')

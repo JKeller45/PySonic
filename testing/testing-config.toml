@@ -1,0 +1,18 @@
+title = "Testing Config"
+
+[settings]
+FILE = "testing/Avicii - Levels.webm"
+output = "testing/"
+length = 15
+size = [1280, 720]
+color = [255, 255, 255]
+background = "testing/background.jpg"
+frame_rate = 30
+width = 6
+separation = 4
+position = "Bottom"
+AISS = true
+wave = false
+circular_looped_video = false
+snowfall = false
+zoom = false
