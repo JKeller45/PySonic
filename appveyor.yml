@@ -52,6 +52,7 @@ for:
     - python3.11 -m pip install --upgrade pip
     - python3.11 -m pip install -r requirements.txt
     - brew install ffmpeg
+    - brew reinstall libunistring
     - ffmpeg
 
   build_script:
@@ -77,6 +78,7 @@ for:
   install:
     - python3.11 -m pip install --upgrade pip
     - python3.11 -m pip install -r requirements.txt
+    - sudo apt update && sudo apt upgrade
     - sudo apt --assume-yes install ffmpeg
 
   build_script:
