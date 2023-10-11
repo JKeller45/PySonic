@@ -52,7 +52,7 @@ for:
     - python3.11 -m pip install -r requirements.txt
 
   build_script:
-  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets-mac:assets"
+  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
 
   test_script:
   - python3.11 pysonic-testing.py
