@@ -62,13 +62,13 @@ def render(config: dict, progress, main):
         settings.separation //= 2
 
     # logging.log(logging.INFO, "Loading Audio...")
-    si = subprocess.STARTUPINFO()
-    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     if settings.audio_file[-4:] != ".wav":
         non_wave_input = True
         convert_args = ["ffmpeg","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         try:
             if platform == "win32":
+                si = subprocess.STARTUPINFO()
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
                 if subprocess.run(convert_args, startupinfo=si).returncode == 0:
                     settings.audio_file = f"{settings.audio_file}.wav"
             else:
