@@ -51,7 +51,7 @@ for:
   install:
     - python3.11 -m pip install --upgrade pip
     - python3.11 -m pip install -r requirements.txt
-    - brew install ffmpeg
+    - brew install ffmpeg --HEAD
 
   build_script:
   - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
@@ -76,7 +76,6 @@ for:
   install:
     - python3.11 -m pip install --upgrade pip
     - python3.11 -m pip install -r requirements.txt
-    - sudo apt update && sudo apt upgrade
     - sudo apt install ffmpeg
 
   build_script:
