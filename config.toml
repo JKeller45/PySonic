@@ -1,9 +1,9 @@
 title = "Temporary Config"
 
 [settings]
-FILE = "C:/Users/james/Desktop/Jeremy Zucker - supercuts (Lyric Video).webm"
+FILE = "C:/Users/james/Desktop/Avicii - Levels.webm" # "C:/Users/james/Desktop/Jeremy Zucker - supercuts (Lyric Video).webm"
 output = "C:/Users/james/Desktop/"
-length = 10
+length = 30
 size = [1920, 1080]
 color = [255, 255, 255]
 background = "C:/Users/james/Desktop/background.jpg" # "C:/Users/james/Desktop/waves.mp4" 

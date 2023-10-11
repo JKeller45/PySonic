@@ -161,6 +161,7 @@ def render(config: dict, progress, main):
 
     # logging.log(logging.INFO, "Calculating Average Heights...")
 
+    heights = signal.savgol_filter(heights, 30, 15, axis=0)
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
     average_lows = [np.mean(arg[2][0:4 * num_bars // 100]) * (settings.size[1] // 5) // max_height for arg in args]
