@@ -13,6 +13,7 @@ from itertools import cycle
 import numpy.typing as npt
 import subprocess
 import warnings
+from sys import platform
     
 def pick_react(args) -> npt.ArrayLike:
     background, num_bars, heights, avg_heights, settings = args
@@ -53,6 +54,7 @@ def render(config: dict, progress, main):
     progress.value = .01
     main.update()
     warnings.simplefilter("ignore", np.ComplexWarning)
+    non_wave_input = False
 
     if settings.AISS:
         settings.size = (settings.size[0] // 2, settings.size[1] // 2)
@@ -60,17 +62,20 @@ def render(config: dict, progress, main):
         settings.separation //= 2
 
     # logging.log(logging.INFO, "Loading Audio...")
-    CREATE_NO_WINDOW = 0x08000000
     if settings.audio_file[-4:] != ".wav":
-        convert_args = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
+        non_wave_input = True
+        convert_args = ["ffmpeg","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
         try:
-            if subprocess.run(convert_args, creationflags=CREATE_NO_WINDOW).returncode == 0:
-                settings.audio_file = f"{settings.audio_file}.wav"
+            if platform == "win32":
+                si = subprocess.STARTUPINFO()
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                if subprocess.run(convert_args, startupinfo=si).returncode == 0:
+                    settings.audio_file = f"{settings.audio_file}.wav"
             else:
-                # logging.error("ffmpeg failure", exc_info=True)
-                pass
+                if subprocess.run(convert_args).returncode == 0:
+                    settings.audio_file = f"{settings.audio_file}.wav"
         except Exception as e:
-            # logging.error(e, exc_info=True)
+            raise e
             pass
 
     fs_rate, audio = wavfile.read(settings.audio_file)
@@ -161,6 +166,7 @@ def render(config: dict, progress, main):
 
     # logging.log(logging.INFO, "Calculating Average Heights...")
 
+    heights = signal.savgol_filter(heights, 30, 15, axis=0)
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
     average_lows = [np.mean(arg[2][0:4 * num_bars // 100]) * (settings.size[1] // 5) // max_height for arg in args]
@@ -207,16 +213,21 @@ def render(config: dict, progress, main):
 
     # logging.log(logging.INFO, "Combining Audio...")
     print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
-    combine_cmds = [F.find_by_relative_path(r"assets\ffmpeg\bin\ffmpeg.exe"),"-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+    combine_cmds = ["ffmpeg","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
+
     try:
-        if subprocess.run(combine_cmds, creationflags=CREATE_NO_WINDOW).returncode == 0:
-            os.remove(f'{settings.output}{file_name}.mp4')
-            os.remove(settings.audio_file)
+        if platform == "win32":
+            if subprocess.run(combine_cmds, startupinfo=si).returncode == 0:
+                os.remove(f'{settings.output}{file_name}.mp4')
+                if non_wave_input:
+                    os.remove(settings.audio_file)
         else:
-            # logging.error(e, exc_info=True)
-            pass
+            if subprocess.run(combine_cmds).returncode == 0:
+                os.remove(f'{settings.output}{file_name}.mp4')
+                if non_wave_input:
+                    os.remove(settings.audio_file)
     except Exception as e:
-        # logging.error(e, exc_info=True)
+        raise e
         pass
 
     # logging.log(logging.INFO, "Done")

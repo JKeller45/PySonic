@@ -1,7 +1,7 @@
 title = "Temporary Config"
 
 [settings]
-FILE = "C:/Users/james/Desktop/Jeremy Zucker - supercuts (Lyric Video).webm"
+FILE = "C:/Users/james/Desktop/Avicii - Levels.webm"
 output = "C:/Users/james/Desktop/"
 length = 10
 size = [1920, 1080]
@@ -13,6 +13,6 @@ separation = 4
 position = "Bottom"
 AISS = false
 wave = false
-circular_looped_video = true
+circular_looped_video = false
 snowfall = false
 zoom = false

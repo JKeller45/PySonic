@@ -1,0 +1,104 @@
+image:
+- Visual Studio 2022
+- macos-monterey
+- Ubuntu2004
+
+skip_branch_with_pr: true
+stack: python 3.11
+
+environment:
+  GITHUB_TOKEN:
+    secure: KOG9MoWPAWH+GRAHwNL8c3b1NgNIJqJd9Y90XLT7ATX+5Od8DOwEDw1pHrYY1mUZ
+
+#
+#   Windows package
+# 
+for:
+-
+  matrix:
+    only:
+    - image: Visual Studio 2022
+
+  environment:
+    matrix:
+    - TOXENV: py311
+
+  install:
+    - C:\Python311-x64\python.exe -m pip install --upgrade pip
+    - C:\Python311-x64\python.exe -m pip install -r requirements.txt
+    - choco install ffmpeg
+
+  build_script:
+  - C:\Python311-x64\Scripts\flet.exe pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets;assets"
+
+  test_script:
+  - C:\Python311-x64\python.exe pysonic-testing.py
+
+  after_test:
+  - 7z a PySonic-windows.zip %CD%\dist\*.exe
+
+  artifacts:
+  - path: PySonic-windows.zip
+
+#
+#   macOS package
+# 
+-
+  matrix:
+    only:
+    - image: macos-monterey
+
+  install:
+    - python3.11 -m pip install --upgrade pip
+    - python3.11 -m pip install -r requirements.txt
+    - brew install ffmpeg
+    - brew reinstall libidn2
+    - brew reinstall libunistring
+
+  build_script:
+  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
+
+  test_script:
+  - python3.11 pysonic-testing.py
+
+  after_test:
+  - zip -r PySonic-macos.zip dist/PySonic.app
+
+  artifacts:
+  - path: PySonic-macos.zip
+
+#
+#   Linux package
+# 
+-
+  matrix:
+    only:
+    - image: Ubuntu2004
+
+  install:
+    - python3.11 -m pip install --upgrade pip
+    - python3.11 -m pip install -r requirements.txt
+    - sudo apt --assume-yes update && sudo apt --assume-yes upgrade
+    - sudo apt --assume-yes install ffmpeg
+
+  build_script:
+  - flet pack Flet_App.py --name PySonic --product-name PySonic --icon assets/sound_waves.png --add-data "assets:assets"
+
+  test_script:
+  - python3.11 pysonic-testing.py
+
+  after_test:
+  - tar -czvf PySonic-linux.tar.gz -C dist PySonic
+
+  artifacts:
+  - path: PySonic-linux.tar.gz
+
+test: off
+platform: x64
+
+# Publish artifacts to GitHub Releases on "tag" builds
+deploy:
+  provider: GitHub
+  auth_token: $(GITHUB_TOKEN)
+  on:
+    APPVEYOR_REPO_TAG: true
