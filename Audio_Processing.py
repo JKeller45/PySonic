@@ -217,6 +217,8 @@ def render(config: dict, progress, main):
 
     try:
         if platform == "win32":
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             if subprocess.run(combine_cmds, startupinfo=si).returncode == 0:
                 os.remove(f'{settings.output}{file_name}.mp4')
                 if non_wave_input:

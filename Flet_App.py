@@ -4,6 +4,8 @@ import numpy as np
 from PIL import ImageColor, Image
 from Audio_Processing import render
 from multiprocessing import freeze_support
+from PIL import ImageColor
+from Functions import hsv_to_rgb, rgb_to_hsv
 
 def main(page: ft.Page):
     config = {}
@@ -35,8 +37,7 @@ def main(page: ft.Page):
 
         background_picker = ft.FilePicker(on_result=on_bg_file_picker_result)
         page.overlay.append(background_picker)
-        bg_color = ft.TextField(label="Input Hex Color", width=150, height=50)
-        access_widgets["bg_color"] = bg_color
+        bg_color = ft.ElevatedButton("Select Background Color", on_click=color_picker)
 
         def on_output_picker_result(result):
             if result.path is not None:
@@ -54,6 +55,128 @@ def main(page: ft.Page):
         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=15))
         page.add(ft.Container(height=40))
         page.add(ft.ElevatedButton("Continue", on_click=continue_to_react))
+
+    def color_picker(e):
+        page.clean()
+        picked_color = ft.canvas.Canvas([ft.canvas.Rect(0, 0, 320, 20, 0, ft.Paint(color="#ff0000"))])
+        
+        def change_hsv(e):
+            rgb_tuple = hsv_to_rgb(hue.value, 1, 1)
+            color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
+            primary.paint.gradient.colors[0] = ft.colors.with_opacity(1, color)
+            primary.paint.gradient.colors[1] = ft.colors.with_opacity(0, color)
+
+            picker.x = saturation.value / 100 * 255
+            picker.y = (1 - brightness.value / 100) * 255
+
+            rgb_tuple = hsv_to_rgb(hue.value, saturation.value / 100, brightness.value / 100)
+            color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
+            picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
+            picked_color._get_children()[0].paint.color = color
+            hex_color.value = color
+
+            page.update()
+
+        def pan_start(e: ft.DragStartEvent):
+            coords[0] = e.local_x
+            coords[1] = e.local_y
+            coords[0] = max(min(coords[0], 255), 0)
+            coords[1] = max(min(coords[1], 255), 0)
+
+            bright = (255 - coords[1]) / 255
+            sat = coords[0] / 255
+            rgb = hsv_to_rgb(hue.value, sat, bright)
+            color = "#" + "".join([hex(int(rgb[0]))[2:].zfill(2), hex(int(rgb[1]))[2:].zfill(2), hex(int(rgb[2]))[2:].zfill(2)])
+            saturation.value = sat * 100
+            brightness.value = bright * 100
+
+            picker.x = coords[0]
+            picker.y = coords[1]
+            picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
+            picked_color._get_children()[0].paint.color = color
+            hex_color.value = color
+            page.update()
+
+        def pan_update(e: ft.DragUpdateEvent):
+            coords[0] = e.local_x
+            coords[1] = e.local_y
+            coords[0] = max(min(coords[0], 255), 0)
+            coords[1] = max(min(coords[1], 255), 0)
+
+            bright = (255 - coords[1]) / 255
+            sat = coords[0] / 255
+            rgb = hsv_to_rgb(hue.value, sat, bright)
+            color = "#" + "".join([hex(int(rgb[0]))[2:].zfill(2), hex(int(rgb[1]))[2:].zfill(2), hex(int(rgb[2]))[2:].zfill(2)])
+            saturation.value = sat * 100
+            brightness.value = bright * 100
+
+            picker.x = coords[0]
+            picker.y = coords[1]
+            picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
+            picked_color._get_children()[0].paint.color = color
+            hex_color.value = color
+            page.update()
+
+        def hex_change(e):
+            text = e.control.value
+            if len(text) == 0 or len(text) > 7:
+                return
+            if text[0] == "#" and len(text) == 7:
+                red = text[1:3]
+                green = text[3:5]
+                blue = text[5:7]
+                try:
+                    red = int(red, 16)
+                    green = int(green, 16)
+                    blue = int(blue, 16)
+                except ValueError:
+                    return
+                hsv = rgb_to_hsv(red, green, blue)
+                hue.value = hsv[0]
+                saturation.value = hsv[1] * 100
+                brightness.value = hsv[2] * 100
+
+                picker.x = saturation.value / 100 * 255
+                picker.y = (1 - brightness.value / 100) * 255
+
+                rgb_tuple = hsv_to_rgb(hue.value, saturation.value / 100, brightness.value / 100)
+                color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
+                picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
+                picked_color._get_children()[0].paint.color = color
+
+                rgb_tuple = hsv_to_rgb(hue.value, 1, 1)
+                color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
+                primary.paint.gradient.colors[0] = ft.colors.with_opacity(1, color)
+                primary.paint.gradient.colors[1] = ft.colors.with_opacity(0, color)
+
+                page.update()
+
+
+        page.add(ft.Text("Color Selection", size=25, weight=ft.FontWeight.BOLD))
+        page.add(ft.Container(height=10))
+        hue = ft.Slider(label="Hue", min=0, max=359, width=255, height=25, value=0, on_change=change_hsv)
+        saturation = ft.Slider(label="Saturation", min=0, max=100, width=255, value=100, height=25, on_change=change_hsv)
+        brightness = ft.Slider(label="Brightness", min=0, max=100, width=255, value=100, height=25, on_change=change_hsv)
+        bg = ft.canvas.Rect(0, 0, 255, 255, 0, ft.Paint(color="#000000"))
+        primary = ft.canvas.Rect(0, 0, 255, 255, 0, ft.Paint(gradient=ft.PaintLinearGradient((0, 0), (0, 255), colors=[ft.colors.with_opacity(1, "#ff0000"), ft.colors.with_opacity(0, "#ff0000")])))
+        white = ft.canvas.Rect(0, 0, 255, 255, 0, ft.Paint(gradient=ft.PaintLinearGradient((0, 0), (255, 0), colors=[ft.colors.with_opacity(1, "#ffffff"), ft.colors.with_opacity(0, "#ffffff")])))
+        black = ft.canvas.Rect(0, 0, 255, 255, 0, ft.Paint(gradient=ft.PaintLinearGradient((0, 0), (0, 255), colors=[ft.colors.with_opacity(0, "#000000"), ft.colors.with_opacity(1, "#000000")])))
+        row = ft.Row([
+            ft.Column([ft.Text("Hue:"), ft.Text("Saturation:"), ft.Text("Brightness:")], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
+            ft.Column([hue, saturation, brightness], alignment=ft.MainAxisAlignment.CENTER, spacing=5)
+            ], alignment=ft.MainAxisAlignment.CENTER, spacing=5)
+        coords = [255, 0]
+        picker = ft.canvas.Circle(255, 0, 5, ft.Paint(gradient=ft.PaintRadialGradient((255, 0), 5, colors=[ft.colors.with_opacity(1, picked_color._get_children()[0].paint.color), ft.colors.with_opacity(1, "#000000")])))
+        canvas = ft.canvas.Canvas([bg, primary, white, black, picker], width=255, height=255, content=ft.GestureDetector(
+            on_pan_start=pan_start,
+            on_pan_update=pan_update,
+            drag_interval=10,))
+        hex_color = ft.TextField(label="Hex Color", width=150, height=50, on_change=hex_change)
+        hex_color.value = picked_color._get_children()[0].paint.color
+        access_widgets["bg_color"] = hex_color
+        next_button = ft.ElevatedButton("Continue", on_click=continue_to_files)
+        page.add(ft.Row([ft.Container(canvas, height=255, width=255), ft.Column([hex_color, row, ft.Container(picked_color, width=310, height=20), next_button])], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
+        
 
     def continue_to_react(e):
         if config.get("FILE", None) == None or config.get("FILE", None) == "" or \

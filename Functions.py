@@ -242,3 +242,59 @@ def circle(img: npt.ArrayLike, coord: tuple[int, int], radius: int, color: tuple
             if (x - coord[0]) ** 2 + (y - coord[1]) ** 2 < radius ** 2 and x < len(img[0]) and y < len(img) and x >= 0 and y >= 0:
                 img[y][x] = color
     return img
+
+def hsv_to_rgb(h: float, s: float, v: float) -> tuple[int, int, int]:
+    """
+    Converts HSV color values to RGB color values.
+    :param h: Hue value (0-360)
+    :param s: Saturation value (0-1)
+    :param v: Value (brightness) value (0-1)
+    :return: Tuple of RGB color values (0-255)
+    """
+    if s == 0:
+        return int(v * 255), int(v * 255), int(v * 255)
+    else:
+        h /= 60
+        i = int(h)
+        f = h - i
+        p = v * (1 - s)
+        q = v * (1 - s * f)
+        t = v * (1 - s * (1 - f))
+        if i == 0:
+            return int(v * 255), int(t * 255), int(p * 255)
+        elif i == 1:
+            return int(q * 255), int(v * 255), int(p * 255)
+        elif i == 2:
+            return int(p * 255), int(v * 255), int(t * 255)
+        elif i == 3:
+            return int(p * 255), int(q * 255), int(v * 255)
+        elif i == 4:
+            return int(t * 255), int(p * 255), int(v * 255)
+        else:
+            return int(v * 255), int(p * 255), int(q * 255)
+        
+def rgb_to_hsv(r: int, g: int, b: int) -> tuple[float, float, float]:
+    """
+    Converts RGB color values to HSV color values.
+    :param r: Red value (0-255)
+    :param g: Green value (0-255)
+    :param b: Blue value (0-255)
+    :return: Tuple of HSV color values (0-360, 0-1, 0-1)
+    """
+    r, g, b = r / 255.0, g / 255.0, b / 255.0
+    cmax, cmin = max(r, g, b), min(r, g, b)
+    delta = cmax - cmin
+    if delta == 0:
+        hue = 0
+    elif cmax == r:
+        hue = ((g - b) / delta) % 6
+    elif cmax == g:
+        hue = (b - r) / delta + 2
+    else:
+        hue = (r - g) / delta + 4
+    hue = round(hue * 60)
+    if hue < 0:
+        hue += 360
+    saturation = 0 if cmax == 0 else delta / cmax
+    value = cmax
+    return hue, saturation, value
