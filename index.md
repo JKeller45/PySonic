@@ -4,11 +4,11 @@ layout: default
 
 # Introducing PySonic
 
-**The internet is full of online audio react visualizers, but they all place a  watermark over your video. You could pay for and learn Adobe After Effects, but that takes time and isn't what most people are looking for. PySonic is designed to be quick and easy, while still generating high quality videos, without that stupid watermark.**
+**The internet is full of online audio react visualizers, but they all place a  watermark over your video. You could pay for and learn Adobe After Effects, but that takes time and isn't what most people are looking for. PySonic is designed to be quick and easy, while still generating high-quality videos, without that stupid watermark.**
 
 ## About
 
-PySonic is an easy to use python application that create reactive video from an audio input. With an efficient render pipeline with multithreading, it is capable of rendering high quality video very quickly. 
+PySonic is an easy-to-use Python application that creates reactive video from an audio input. With an efficient render pipeline with multithreading, it is capable of rendering high-quality video very quickly. 
 
 Some features include:
 
@@ -16,14 +16,12 @@ Some features include:
 - Solid color, static image, or video backgrounds
 - Zoom and "snow" effects
 - AI Super Sampling
-- Lots of accepted audio and video formats with ffmpeg
+- Lots of accepted audio and video formats with FFmpeg
 - Fast rendering with multithreading
 - Different bar placement locations
 - Variable frame rate, resolution, and length
 
 PySonic was created as a replacement for Sonic Candle, a similar application built in Java that was orphaned years ago. The purpose was to improve on some issues with Sonic Candle, like lack of support for a wide range of audio and video formats, while bringing it up to date with a faster render pipeline.
-
-PySonic is currently in BETA. This is not a stable release. It has been tested, but thorough stability testing is necessary and new features are still planned. If you encounter bugs and glitches, please open an issue on github as it would greatly help me out in testing and polishing.
 
 ## Showcase
 
@@ -47,22 +45,16 @@ Simply click and you'll be redirected to YouTube:
 
 This is not meant to be a definitive roadmap with all planned features. It is intended to be a guide for approximately when specific upcoming features should be available. It is subject to change.
 
-#### 0.9 - Released!
-
-- New Flet (Flutter) based GUI
-- Preparation for continuous integration
-- Many bugfixes
-- Improvements for future macOS and Linux releases
-
-#### 1.0 - Under Development
+#### 1.0 - Released!
 
 - MacOS and Linux versions
 - Continuous integration for Windows, macOS, and Linux
 - Automated stability testing
 
-#### 1.1
+#### 1.1 - Under Development
 
 - Transparent video backgrounds
+- Opacity for react bars and waveforms
 - Reintroduction of color picker (removed during the switch to Flet)
 - Additional waveform react placements
 
@@ -72,12 +64,18 @@ This is not meant to be a definitive roadmap with all planned features. It is in
 - Render queue
 - Render previews
 
-#### 1.3
+#### Future
 
 - Real-time render display
+- Additional react modes
+- Animated GIF backgrounds (only static GIFs are currently supported)
+- FFmpeg improvements
+- And more!
 
 ## Installation Guide:
 PySonic relies on FFmpeg, however, due to licensing, you must install it yourself. On Windows, FFmpeg can be installed with the Chocolatey package manager, or with a static build. On Mac, I highly recommend using the MacPorts or Homebrew package managers to install. On Linux, apt-get/apt is the preferred way. Check out these install guides: [Windows Static Build](https://phoenixnap.com/kb/ffmpeg-windows) or [Chocolatety](https://community.chocolatey.org/packages/ffmpeg-shared), [Mac](https://phoenixnap.com/kb/ffmpeg-mac), [Linux](https://www.hostinger.com/tutorials/how-to-install-ffmpeg). 
+
+Once FFmpeg is installed, simply run the executable and start rendering!
 
 ## More Information
 Video backgrounds are, at the moment, limited to 5 seconds due to the high memory requirements. While there is an easy solution, the drop in render speed was unacceptable. I am continuing to investigate an alternative solution. The AI supersampling can be slow. It is a cool feature, but due to quality and speed, I recommend using it if you wish to render at 4K but only have 16Gb of memory. Even with these settings, it is still possible to render at a native resolution.
