@@ -7,9 +7,12 @@ from multiprocessing import freeze_support
 from PIL import ImageColor
 from Functions import hsv_to_rgb, rgb_to_hsv
 
+config = {}
+access_widgets = {}
+
 def main(page: ft.Page):
-    config = {}
-    access_widgets = {}
+    global config
+    global access_widgets
     page.title = "PySonic"
     page.window_width = 800
     page.window_height = 500
@@ -19,25 +22,26 @@ def main(page: ft.Page):
     page.add(ft.Text("Let's start rendering"))
 
     def continue_to_files(e):
+        global config
+        global access_widgets
         page.clean()
-        config.clear()
         page.add(ft.Text("File Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
 
         def on_audio_file_picker_result(result):
             if result.files is not None:
-                config["FILE"] = result.files[0].path
+                config["FILE"] = str(result.files[0].path)
 
         audio_file_picker = ft.FilePicker(on_result=on_audio_file_picker_result)
         page.overlay.append(audio_file_picker)
 
         def on_bg_file_picker_result(result):
             if result.files is not None:
-                config["background"] = result.files[0].path
+                config["background"] = str(result.files[0].path)
 
         background_picker = ft.FilePicker(on_result=on_bg_file_picker_result)
         page.overlay.append(background_picker)
-        bg_color = ft.ElevatedButton("Select Background Color", on_click=color_picker)
+        bg_color = ft.ElevatedButton("Select Color", on_click=color_picker)
 
         def on_output_picker_result(result):
             if result.path is not None:
@@ -48,7 +52,7 @@ def main(page: ft.Page):
         page.add(ft.Column([
             ft.ElevatedButton("Select Audio File", on_click=lambda _: audio_file_picker.pick_files(allow_multiple=False, file_type="CUSTOM", allowed_extensions=["mp3", "wav", "webm", "ogg", "aac", "flac", "aiff", "wma", "oga"])),
             ft.Row([
-                ft.ElevatedButton("Select Background", on_click=lambda _: background_picker.pick_files(allow_multiple=False, file_type="CUSTOM", allowed_extensions = ["png", "jpg", "jpeg", "gif", "mp4", "mov", "wmv", "avi"])),
+                ft.ElevatedButton("Select Media", on_click=lambda _: background_picker.pick_files(allow_multiple=False, file_type="CUSTOM", allowed_extensions = ["png", "jpg", "jpeg", "gif", "mp4", "mov", "wmv", "avi"])),
                 ft.Text("OR", size=15),
                 bg_color], alignment=ft.MainAxisAlignment.CENTER),
             ft.ElevatedButton("Select Output Folder", on_click=lambda _: output_folder_picker.get_directory_path())
@@ -57,9 +61,10 @@ def main(page: ft.Page):
         page.add(ft.ElevatedButton("Continue", on_click=continue_to_react))
 
     def color_picker(e):
+        global config
         page.clean()
         picked_color = ft.canvas.Canvas([ft.canvas.Rect(0, 0, 320, 20, 0, ft.Paint(color="#ff0000"))])
-        
+
         def change_hsv(e):
             rgb_tuple = hsv_to_rgb(hue.value, 1, 1)
             color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
@@ -173,17 +178,20 @@ def main(page: ft.Page):
             drag_interval=10,))
         hex_color = ft.TextField(label="Hex Color", width=150, height=50, on_change=hex_change)
         hex_color.value = picked_color._get_children()[0].paint.color
-        access_widgets["bg_color"] = hex_color
-        next_button = ft.ElevatedButton("Continue", on_click=continue_to_files)
+        if config.get("background", 0) or config.get("bg_color", 0):
+            access_widgets["hex_color"] = hex_color
+            next_button = ft.ElevatedButton("Continue", on_click=continue_to_react_config)
+        else:
+            access_widgets["bg_color"] = hex_color
+            next_button = ft.ElevatedButton("Continue", on_click=continue_to_files)
         page.add(ft.Row([ft.Container(canvas, height=255, width=255), ft.Column([hex_color, row, ft.Container(picked_color, width=310, height=20), next_button])], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
-        
 
     def continue_to_react(e):
         if config.get("FILE", None) == None or config.get("FILE", None) == "" or \
             config.get("output", None) == None or config.get("output", None) == "":
             return
         if config.get("background", None) == None or config.get("background", None) == "":
-            if access_widgets["bg_color"].value == "":
+            if access_widgets.get("bg_color", "").value == "":
                 return
             config["background"] = access_widgets["bg_color"].value.strip(" #")[0:6]
         page.clean()
@@ -202,20 +210,28 @@ def main(page: ft.Page):
         page.add(ft.Text("React Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
 
-        hex_color = ft.TextField(label="Bar Color (hex)", width=150, height=50)
+        hex_color = ft.ElevatedButton("Select Color", on_click=color_picker)
         zoom_checkbox = ft.Checkbox(label="Zoom Effect", value=False, width=150, height=50)
         snowfall_checkbox = ft.Checkbox(label="Snowfall Effect", value=False, width=150, height=50)
-        access_widgets["hex_color"] = hex_color
         access_widgets["zoom_checkbox"] = zoom_checkbox
         access_widgets["snowfall_checkbox"] = snowfall_checkbox
 
         if access_widgets["react_type"].value == "Bars":
-            width = ft.TextField(label="Bar Width", width=150, height=60)
-            separation = ft.TextField(label="Bar Separation", width=150, height=60)
-            bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right")], label="Bar Position", width=150, height=60)
+            if access_widgets.get("width") is not None:
+                width = access_widgets["width"]
+            else:
+                width = ft.TextField(label="Bar Width", width=150, height=60)
+            if access_widgets.get("separation") is not None:
+                separation = access_widgets["separation"]
+            else:
+                separation = ft.TextField(label="Bar Separation", width=150, height=60)
+            if access_widgets.get("bar_pos") is not None:
+                bar_pos = access_widgets["bar_pos"]
+            else:
+                bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right")], label="Bar Position", width=150, height=60)
             page.add(ft.Column([
                 ft.Row([width, separation, bar_pos], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
-                ft.Row([hex_color, zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
+                ft.Row([ft.Container(hex_color, width=150, height=60, alignment=ft.MainAxisAlignment.CENTER), ft.Container(zoom_checkbox, width=150, height=60, alignment=ft.MainAxisAlignment.CENTER), ft.Container(snowfall_checkbox, width=150, height=60, alignment=ft.MainAxisAlignment.CENTER)], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=20))
             access_widgets["width"] = width
             access_widgets["separation"] = separation
