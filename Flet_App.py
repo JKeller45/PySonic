@@ -78,7 +78,7 @@ def main(page: ft.Page):
             color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
             picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
             picked_color._get_children()[0].paint.color = color
-            hex_color.value = color
+            hex_color.value = color.strip("#")
 
             page.update()
 
@@ -99,7 +99,7 @@ def main(page: ft.Page):
             picker.y = coords[1]
             picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
             picked_color._get_children()[0].paint.color = color
-            hex_color.value = color
+            hex_color.value = color.strip("#")
             page.update()
 
         def pan_update(e: ft.DragUpdateEvent):
@@ -119,11 +119,11 @@ def main(page: ft.Page):
             picker.y = coords[1]
             picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
             picked_color._get_children()[0].paint.color = color
-            hex_color.value = color
+            hex_color.value = color.strip("#")
             page.update()
 
         def hex_change(e):
-            text = e.control.value
+            text = "#" + e.control.value
             if len(text) == 0 or len(text) > 7:
                 return
             if text[0] == "#" and len(text) == 7:
@@ -176,8 +176,8 @@ def main(page: ft.Page):
             on_pan_start=pan_start,
             on_pan_update=pan_update,
             drag_interval=10,))
-        hex_color = ft.TextField(label="Hex Color", width=150, height=50, on_change=hex_change)
-        hex_color.value = picked_color._get_children()[0].paint.color
+        hex_color = ft.TextField(label="Hex Color", width=150, height=60, max_length=6, counter_text="", prefix_text="#", on_change=hex_change)
+        hex_color.value = picked_color._get_children()[0].paint.color.strip("#")
         if config.get("background", 0) or config.get("bg_color", 0):
             access_widgets["hex_color"] = hex_color
             next_button = ft.ElevatedButton("Continue", on_click=continue_to_react_config)
@@ -206,6 +206,8 @@ def main(page: ft.Page):
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_files), ft.ElevatedButton("Continue", on_click=continue_to_react_config)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_react_config(e):
+        if access_widgets["react_type"].value != "Bars" and access_widgets["react_type"].value != "Waveform":
+            return
         page.clean()
         page.add(ft.Text("React Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
@@ -231,19 +233,31 @@ def main(page: ft.Page):
                 bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right")], label="Bar Position", width=150, height=60)
             page.add(ft.Column([
                 ft.Row([width, separation, bar_pos], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
-                ft.Row([ft.Container(hex_color, width=150, height=60, alignment=ft.MainAxisAlignment.CENTER), ft.Container(zoom_checkbox, width=150, height=60, alignment=ft.MainAxisAlignment.CENTER), ft.Container(snowfall_checkbox, width=150, height=60, alignment=ft.MainAxisAlignment.CENTER)], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
-            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=20))
+                ft.Row([ft.Container(hex_color, width=150, height=60), zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=30))
             access_widgets["width"] = width
             access_widgets["separation"] = separation
             access_widgets["bar_pos"] = bar_pos
         else:
-            page.add(ft.Row([hex_color, zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
+            page.add(ft.Row([ft.Container(hex_color, width=150, height=60), zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
         page.add(ft.Container(height=10))
 
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_react), ft.ElevatedButton("Continue", on_click=continue_to_video_settings)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_video_settings(e):
+        if access_widgets["react_type"].value == "Bars":
+            if access_widgets["bar_pos"].value == "" or access_widgets["bar_pos"].value == None:
+                return
+            if access_widgets["width"].value == "" or access_widgets["separation"].value == "":
+                return
+            try:
+                int(access_widgets["width"].value)
+                int(access_widgets["separation"].value)
+            except ValueError:
+                return
+        if access_widgets.get("hex_color", None) is None or access_widgets["hex_color"].value == "":
+            return
         if access_widgets["react_type"].value == "Bars":
             config["width"] = int(access_widgets["width"].value)
             config["separation"] = int(access_widgets["separation"].value)
@@ -282,6 +296,8 @@ def main(page: ft.Page):
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_react_config), ft.ElevatedButton("Render", on_click=continue_to_render)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_render(e):
+        if access_widgets["frame_rate"].value == "" or access_widgets["vid_length"].value == "" or access_widgets["vid_res"].value == "":
+            return
         config["frame_rate"] = int(access_widgets["frame_rate"].value)
         config["length"] = int(access_widgets["vid_length"].value)
         if access_widgets["vid_res"].value == "720p":
