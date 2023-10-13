@@ -21,10 +21,11 @@
       {% if site.github.is_project_page %}
         <a href="{{ site.github.repository_url }}" class="btn">View on GitHub</a>
       {% endif %}
-      <a href="https://github.com/JKeller45/PySonic/releases/download/v1.0.0/PySonic-windows.zip" class="btn">Download for Windows</a>
-      <a href="https://github.com/JKeller45/PySonic/releases/download/v1.0.0/PySonic-macos.zip" class="btn">Download for MacOS</a>
-      <a href="https://github.com/JKeller45/PySonic/releases/download/v1.0.0/PySonic-linux.tar.gz" class="btn">Download for Linux</a>
-      <a href="https://github.com/JKeller45/PySonic/archive/refs/tags/v1.0.0.zip" class="btn">Download Source Code</a>
+      {% if site.show_downloads %}
+        <a href="{{ site.github.releases_url }}" class="btn">Download Application</a>
+        <a href="{{ site.github.latest_release }}" class="btn">Latest Release</a>
+        <a href="{{ site.github.zip_url }}" class="btn">Download Source Code</a>
+      {% endif %}
     </header>
 
     <main id="content" class="main-content" role="main">
