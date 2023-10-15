@@ -157,7 +157,7 @@ def render(config: dict, progress, main):
         else:
             args.append((Frame_Information(False, "", 0, 0), num_bars, heights, heights.mean(axis=0), settings))
 
-    heights = signal.savgol_filter(heights, 30, 15, axis=0)
+    heights = signal.savgol_filter(heights, 60, 15, axis=0)
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
     average_lows = [np.mean(arg[2][0:4 * num_bars // 100]) * (settings.size[1] // 5) // max_height for arg in args]
@@ -172,7 +172,7 @@ def render(config: dict, progress, main):
         progress_counter = 0
         args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
                     (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
-        with Pool(processes=max(os.cpu_count - 2, 1), maxtasksperchild=50) as pool:
+        with Pool(processes=max(os.cpu_count() - 2, 1), maxtasksperchild=50) as pool:
             outputs = pool.imap(pick_react, args)
             sr = None
             if settings.AISS:
