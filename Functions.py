@@ -77,6 +77,7 @@ def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heig
         else:
             new_bg[:] = shared_bg[:]
         background = new_bg
+        existing_shm.close()
 
     offset = settings.separation // 2 
     if settings.zoom:

@@ -172,7 +172,7 @@ def render(config: dict, progress, main):
         progress_counter = 0
         args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
                     (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
-        with Pool(processes=max(os.cpu_count() - 2, 1), maxtasksperchild=50) as pool:
+        with Pool(processes=min(5, max(1, os.cpu_count() // 2)), maxtasksperchild=30) as pool:
             outputs = pool.imap(pick_react, args)
             sr = None
             if settings.AISS:
