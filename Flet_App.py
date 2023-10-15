@@ -5,7 +5,6 @@ from PIL import ImageColor, Image
 from Audio_Processing import render
 from multiprocessing import freeze_support
 from PIL import ImageColor
-from Functions import hsv_to_rgb, rgb_to_hsv
 from Classes import Settings
 import Functions as F
 from Audio_Processing import pick_react
@@ -69,7 +68,7 @@ def main(page: ft.Page):
         picked_color = ft.canvas.Canvas([ft.canvas.Rect(0, 0, 320, 20, 0, ft.Paint(color="#ff0000"))])
 
         def change_hsv(e):
-            rgb_tuple = hsv_to_rgb(hue.value, 1, 1)
+            rgb_tuple = F.hsv_to_rgb(hue.value, 1, 1)
             color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
             primary.paint.gradient.colors[0] = ft.colors.with_opacity(1, color)
             primary.paint.gradient.colors[1] = ft.colors.with_opacity(0, color)
@@ -77,7 +76,7 @@ def main(page: ft.Page):
             picker.x = saturation.value / 100 * 255
             picker.y = (1 - brightness.value / 100) * 255
 
-            rgb_tuple = hsv_to_rgb(hue.value, saturation.value / 100, brightness.value / 100)
+            rgb_tuple = F.hsv_to_rgb(hue.value, saturation.value / 100, brightness.value / 100)
             color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
             picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
             picked_color._get_children()[0].paint.color = color
@@ -93,7 +92,7 @@ def main(page: ft.Page):
 
             bright = (255 - coords[1]) / 255
             sat = coords[0] / 255
-            rgb = hsv_to_rgb(hue.value, sat, bright)
+            rgb = F.hsv_to_rgb(hue.value, sat, bright)
             color = "#" + "".join([hex(int(rgb[0]))[2:].zfill(2), hex(int(rgb[1]))[2:].zfill(2), hex(int(rgb[2]))[2:].zfill(2)])
             saturation.value = sat * 100
             brightness.value = bright * 100
@@ -113,7 +112,7 @@ def main(page: ft.Page):
 
             bright = (255 - coords[1]) / 255
             sat = coords[0] / 255
-            rgb = hsv_to_rgb(hue.value, sat, bright)
+            rgb = F.hsv_to_rgb(hue.value, sat, bright)
             color = "#" + "".join([hex(int(rgb[0]))[2:].zfill(2), hex(int(rgb[1]))[2:].zfill(2), hex(int(rgb[2]))[2:].zfill(2)])
             saturation.value = sat * 100
             brightness.value = bright * 100
@@ -139,7 +138,7 @@ def main(page: ft.Page):
                     blue = int(blue, 16)
                 except ValueError:
                     return
-                hsv = rgb_to_hsv(red, green, blue)
+                hsv = F.rgb_to_hsv(red, green, blue)
                 hue.value = hsv[0]
                 saturation.value = hsv[1] * 100
                 brightness.value = hsv[2] * 100
@@ -147,12 +146,12 @@ def main(page: ft.Page):
                 picker.x = saturation.value / 100 * 255
                 picker.y = (1 - brightness.value / 100) * 255
 
-                rgb_tuple = hsv_to_rgb(hue.value, saturation.value / 100, brightness.value / 100)
+                rgb_tuple = F.hsv_to_rgb(hue.value, saturation.value / 100, brightness.value / 100)
                 color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
                 picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
                 picked_color._get_children()[0].paint.color = color
 
-                rgb_tuple = hsv_to_rgb(hue.value, 1, 1)
+                rgb_tuple = F.hsv_to_rgb(hue.value, 1, 1)
                 color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
                 primary.paint.gradient.colors[0] = ft.colors.with_opacity(1, color)
                 primary.paint.gradient.colors[1] = ft.colors.with_opacity(0, color)
