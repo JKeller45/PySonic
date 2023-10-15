@@ -87,10 +87,12 @@ def render(config: dict, progress, main):
         settings.width = 1
     if settings.position == "Left" or settings.position == "Right":
         num_bars = settings.size[1] // (settings.width + settings.separation)
+        if num_bars >= settings.size[1]:
+            num_bars = settings.size[1] - 1
     else:
         num_bars = settings.size[0] // (settings.width + settings.separation)
-    if num_bars >= settings.size[0]:
-        num_bars = settings.size[0] - 1
+        if num_bars >= settings.size[0]:
+            num_bars = settings.size[0] - 1
     
     length_in_seconds = secs if settings.length <= 0 else min([settings.length, secs])
     settings.length = min([settings.length, secs])

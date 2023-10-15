@@ -78,7 +78,7 @@ def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heig
             new_bg[:] = shared_bg[:]
         background = new_bg
 
-    offset = 0
+    offset = settings.separation // 2 
     if settings.zoom:
         background = zoom_effect(background, cummulative_avg_heights[1])
 
