@@ -51,7 +51,7 @@ def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: S
 
 def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
     """
-    Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
+    Draws the react bars for a given frame
 
     Parameters
     ----------
@@ -153,7 +153,7 @@ def add_height(heights: npt.ArrayLike, group: int, amp: float, angle: float, sid
 
 def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
     """
-    Draws the wave for a given frame. This method is designed to be used in a multithreaded way.
+    Draws the react waveform for a given frame
 
     Parameters
     ----------
@@ -239,7 +239,7 @@ def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, set
 
 def generate_snowfall_matrix(cummulative_avg_heights: int, angle: int, settings: Settings) -> npt.ArrayLike:
     """
-    Generates a matrix of snowfall points.
+    Generates a matrix of points for the snowfall effect as (x,y) coordinates
 
     Parameters
     ----------
@@ -249,7 +249,7 @@ def generate_snowfall_matrix(cummulative_avg_heights: int, angle: int, settings:
 
     Returns
     -------
-    npt.ArrayLike: A matrix of snowfall points.
+    npt.ArrayLike: An array of x-y points for the snowfall effect.
     """
     np.random.seed(settings.snow_seed)
     matrix = np.random.choice(settings.size[0] * settings.size[1] // 150, size=settings.size)
@@ -262,7 +262,7 @@ def generate_snowfall_matrix(cummulative_avg_heights: int, angle: int, settings:
 @njit
 def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, color: tuple[int, int, int]) -> npt.ArrayLike:
     """
-    Creates the snowfall effect on an image.
+    Draws the snowfall effect on the output image
 
     Parameters
     ----------

@@ -6,7 +6,6 @@ from Audio_Processing import render
 from multiprocessing import freeze_support
 from PIL import ImageColor
 from Functions import hsv_to_rgb, rgb_to_hsv
-from scipy import signal
 from Classes import Settings
 import Functions as F
 from Audio_Processing import pick_react
