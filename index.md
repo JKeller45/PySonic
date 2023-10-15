@@ -54,21 +54,21 @@ This is not meant to be a definitive roadmap with all planned features. It is in
 #### 1.1 - Under Development
 
 - Transparent video backgrounds
-- Opacity for react bars and waveforms
 - Reintroduction of color picker (removed during the switch to Flet)
 - Additional waveform react placements
+- Render previews
 
 #### 1.2
 
 - Longer video backgrounds
 - Render queue
-- Render previews
+- Animated GIF backgrounds (only static GIFs are currently supported)
 
 #### Future
 
 - Real-time render display
+- Opacity for react bars and waveforms
 - Additional react modes
-- Animated GIF backgrounds (only static GIFs are currently supported)
 - FFmpeg improvements
 - And more!
 
