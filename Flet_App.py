@@ -384,19 +384,18 @@ def main(page: ft.Page):
         config["zoom"] = access_widgets["zoom_checkbox"].value
         config["snowfall"] = access_widgets["snowfall_checkbox"].value
         
-
         page.clean()
 
         page.add(ft.Text("Video Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
-        frame_rate = ft.TextField(label="Frame Rate", width=150, height=60)
-        vid_length = ft.TextField(label="Video Length (seconds)", width=150, height=60)
+        frame_rate = ft.TextField(label="Frame Rate", value=30, width=150, height=60)
+        vid_length = ft.TextField(label="Length (seconds) (-1 for Max)", value=-1, width=150, height=60)
         vid_res = ft.Dropdown(options=[ft.dropdown.Option("720p"), ft.dropdown.Option("1080p"), ft.dropdown.Option("1440p"), ft.dropdown.Option("4K")], label="Video Resolution", width=150, height=60)
         access_widgets["frame_rate"] = frame_rate
         access_widgets["vid_length"] = vid_length
         access_widgets["vid_res"] = vid_res
 
-        circular_vid = ft.Checkbox(label="Circular Looped Video", value=False, width=150, height=50)
+        circular_vid = ft.Checkbox(label="Circular Looped Video", value=True, width=150, height=50)
         AISS = ft.Checkbox(label="AI Supersampling", value=False, width=150, height=50)
         page.add(ft.Column([
             ft.Row([frame_rate, vid_length, vid_res], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
@@ -416,6 +415,8 @@ def main(page: ft.Page):
             return
         config["frame_rate"] = int(access_widgets["frame_rate"].value)
         config["length"] = int(access_widgets["vid_length"].value)
+        if config["length"] <= -1:
+            config["length"] = 10000000
         if access_widgets["vid_res"].value == "720p":
             config["size"] = [1280, 720]
         elif access_widgets["vid_res"].value == "1080p":
