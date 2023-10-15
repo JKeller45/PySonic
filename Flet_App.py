@@ -6,6 +6,10 @@ from Audio_Processing import render
 from multiprocessing import freeze_support
 from PIL import ImageColor
 from Functions import hsv_to_rgb, rgb_to_hsv
+from scipy import signal
+from Classes import Settings
+import Functions as F
+from Audio_Processing import pick_react
 
 config = {}
 access_widgets = {}
@@ -245,6 +249,90 @@ def main(page: ft.Page):
 
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_react), ft.ElevatedButton("Continue", on_click=continue_to_video_settings)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
+    def preview_render(e):
+        if access_widgets["react_type"].value == "Bars":
+            if access_widgets["bar_pos"].value == "" or access_widgets["bar_pos"].value == None:
+                return
+            if access_widgets["width"].value == "" or access_widgets["separation"].value == "":
+                return
+            try:
+                int(access_widgets["width"].value)
+                int(access_widgets["separation"].value)
+            except ValueError:
+                return
+        if access_widgets.get("hex_color", None) is None or access_widgets["hex_color"].value == "":
+            return
+        if access_widgets["react_type"].value == "Bars":
+            config["width"] = int(access_widgets["width"].value)
+            config["separation"] = int(access_widgets["separation"].value)
+            config["position"] = access_widgets["bar_pos"].value
+        else:
+            config["width"] = 1
+            config["separation"] = 0
+            config["position"] = "Bottom"
+        config["wave"] = access_widgets["react_type"].value == "Waveform"
+        config["color"] = ImageColor.getrgb(f"#{access_widgets['hex_color'].value.strip(' #')[0:6]}")
+        config["zoom"] = access_widgets["zoom_checkbox"].value
+        config["snowfall"] = access_widgets["snowfall_checkbox"].value
+        if access_widgets["vid_res"].value == "720p":
+            config["size"] = [1280, 720]
+        elif access_widgets["vid_res"].value == "1080p":
+            config["size"] = [1920, 1080]
+        elif access_widgets["vid_res"].value == "1440p":
+            config["size"] = [2560, 1440]
+        elif access_widgets["vid_res"].value == "4K":
+            config["size"] = [3840, 2160]
+        config["AISS"] = access_widgets["AISS"].value
+
+        settings = Settings(audio_file=config["FILE"], output=config["output"], length=1, size=config["size"],
+                            color=tuple(config["color"]), background=config["background"],frame_rate=30,
+                            separation=config["separation"], position=config["position"], AISS=config["AISS"], 
+                            width=config["width"], wave=config["wave"], circular_looped_video=False, 
+                            snowfall=config["snowfall"], zoom=config["zoom"], snow_seed=int(np.random.rand() * 1000000))
+
+        if settings.wave:
+            settings.separation = 0
+            settings.width = 1
+        if settings.position == "Left" or settings.position == "Right":
+            num_bars = settings.size[1] // (settings.width + settings.separation)
+        else:
+            num_bars = settings.size[0] // (settings.width + settings.separation)
+        if num_bars >= settings.size[0]:
+            num_bars = settings.size[0] - 1
+
+        if len(settings.background) == 6:
+                settings.background = cv2.cvtColor(np.array(Image.new(mode="RGB", size=(settings.size[0], settings.size[1]), color=ImageColor.getrgb(f"#{settings.background}"))), cv2.COLOR_RGB2BGR)
+        if type(settings.background) == str:
+            if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
+                vid = cv2.VideoCapture(settings.background)
+                success, image = vid.read()
+                if not success:
+                    return
+                settings.background = cv2.resize(image, (settings.size[0], settings.size[1]))
+            else:
+                settings.background = cv2.resize(cv2.imread(settings.background), (settings.size[0], settings.size[1]))
+                        
+        args = (settings.background, num_bars, np.int64([abs(np.sin(np.pi * x * 4 / num_bars) * settings.size[1] / 5) for x in range(num_bars)]), 0, settings)
+        max_height = max(args[2])
+        average_heights = args[3] / 20000000 + 1
+        average_lows = np.mean(args[2][0:4 * num_bars // 100]) * (settings.size[1] // 5) // max_height
+        args = (settings.background, num_bars, args[2], (average_heights, average_lows), settings)
+
+        img = pick_react(args)
+
+        if settings.AISS:
+            sr = cv2.dnn_superres.DnnSuperResImpl_create()
+            try:
+                path = F.find_by_relative_path(r"assets/ESPCN_x2.pb")
+            except Exception as e:
+                raise e
+            sr.readModel(path)
+            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+            sr.setModel("espcn", 2)
+            img = sr.upsample(img)
+        cv2.imshow("Preview", img)
+        cv2.waitKey(0)
+
     def continue_to_video_settings(e):
         if access_widgets["react_type"].value == "Bars":
             if access_widgets["bar_pos"].value == "" or access_widgets["bar_pos"].value == None:
@@ -270,6 +358,7 @@ def main(page: ft.Page):
         config["color"] = ImageColor.getrgb(f"#{access_widgets['hex_color'].value.strip(' #')[0:6]}")
         config["zoom"] = access_widgets["zoom_checkbox"].value
         config["snowfall"] = access_widgets["snowfall_checkbox"].value
+        
 
         page.clean()
 
@@ -290,6 +379,8 @@ def main(page: ft.Page):
             horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=20))
         access_widgets["circular_vid"] = circular_vid
         access_widgets["AISS"] = AISS
+
+        page.add(ft.ElevatedButton("Preview", on_click=preview_render))
 
         page.add(ft.Container(height=10))
 

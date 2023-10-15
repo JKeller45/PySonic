@@ -49,7 +49,7 @@ def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: S
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord - height), settings.color, -1)
     return output_image
 
-def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
+def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
     """
     Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
 
@@ -64,18 +64,19 @@ def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
     -------
     background (np.ndarray): the final frame with all bars drawn over its
     """
-    existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
-    shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
-    if background.video:
-        shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
-    else:
-        shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
-    new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
-    if background.video:
-        new_bg[:] = shared_bg[background.frame_number][:]
-    else:
-        new_bg[:] = shared_bg[:]
-    background = new_bg
+    if type(background) == Frame_Information:
+        existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
+        shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
+        if background.video:
+            shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
+        else:
+            shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
+        new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
+        if background.video:
+            new_bg[:] = shared_bg[background.frame_number][:]
+        else:
+            new_bg[:] = shared_bg[:]
+        background = new_bg
 
     offset = 0
     if settings.zoom:
@@ -161,18 +162,19 @@ def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
     heights (list): heights for each bar being drawn
     settings (Settings): the settings dataclass that contains the render settings
     """
-    existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
-    shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
-    if background.video:
-        shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
-    else:
-        shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
-    new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
-    if background.video:
-        new_bg[:] = shared_bg[background.frame_number][:]
-    else:
-        new_bg[:] = shared_bg[:]
-    background = new_bg
+    if type(background) == Frame_Information:
+        existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
+        shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
+        if background.video:
+            shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
+        else:
+            shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
+        new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
+        if background.video:
+            new_bg[:] = shared_bg[background.frame_number][:]
+        else:
+            new_bg[:] = shared_bg[:]
+        background = new_bg
 
     if settings.zoom:
         background = zoom_effect(background, cummulative_avg_heights[1])
