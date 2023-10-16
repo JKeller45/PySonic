@@ -158,7 +158,6 @@ def main(page: ft.Page):
 
                 page.update()
 
-
         page.add(ft.Text("Color Selection", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
         hue = ft.Slider(label="Hue", min=0, max=359, width=255, height=25, value=0, on_change=change_hsv)
@@ -219,6 +218,11 @@ def main(page: ft.Page):
         snowfall_checkbox = ft.Checkbox(label="Snowfall Effect", value=False, width=150, height=50)
         access_widgets["zoom_checkbox"] = zoom_checkbox
         access_widgets["snowfall_checkbox"] = snowfall_checkbox
+        if access_widgets.get("bar_pos") is not None:
+            bar_pos = access_widgets["bar_pos"]
+        else:
+            bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right")], label="React Position", width=150, height=60)
+        access_widgets["bar_pos"] = bar_pos
 
         if access_widgets["react_type"].value == "Bars":
             if access_widgets.get("width") is not None:
@@ -229,19 +233,14 @@ def main(page: ft.Page):
                 separation = access_widgets["separation"]
             else:
                 separation = ft.TextField(label="Bar Separation", width=150, height=60)
-            if access_widgets.get("bar_pos") is not None:
-                bar_pos = access_widgets["bar_pos"]
-            else:
-                bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right")], label="Bar Position", width=150, height=60)
             page.add(ft.Column([
                 ft.Row([width, separation, bar_pos], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
                 ft.Row([ft.Container(hex_color, width=150, height=60), zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=30))
             access_widgets["width"] = width
             access_widgets["separation"] = separation
-            access_widgets["bar_pos"] = bar_pos
         else:
-            page.add(ft.Row([ft.Container(hex_color, width=150, height=60), zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
+            page.add(ft.Column([ft.Row([ft.Container(hex_color, width=150, height=60), bar_pos], alignment=ft.MainAxisAlignment.CENTER, spacing=20), ft.Row([zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20)], alignment=ft.CrossAxisAlignment.CENTER, spacing=20))
 
         page.add(ft.Container(height=10))
 
@@ -249,8 +248,6 @@ def main(page: ft.Page):
 
     def preview_render(e):
         if access_widgets["react_type"].value == "Bars":
-            if access_widgets["bar_pos"].value == "" or access_widgets["bar_pos"].value == None:
-                return
             if access_widgets["width"].value == "" or access_widgets["separation"].value == "":
                 return
             try:
@@ -258,16 +255,17 @@ def main(page: ft.Page):
                 int(access_widgets["separation"].value)
             except ValueError:
                 return
+        if access_widgets["bar_pos"].value == "" or access_widgets["bar_pos"].value == None:
+                return
         if access_widgets.get("hex_color", None) is None or access_widgets["hex_color"].value == "":
             return
         if access_widgets["react_type"].value == "Bars":
             config["width"] = int(access_widgets["width"].value)
             config["separation"] = int(access_widgets["separation"].value)
-            config["position"] = access_widgets["bar_pos"].value
         else:
             config["width"] = 1
             config["separation"] = 0
-            config["position"] = "Bottom"
+        config["position"] = access_widgets["bar_pos"].value
         config["wave"] = access_widgets["react_type"].value == "Waveform"
         config["color"] = ImageColor.getrgb(f"#{access_widgets['hex_color'].value.strip(' #')[0:6]}")
         config["zoom"] = access_widgets["zoom_checkbox"].value
@@ -374,11 +372,10 @@ def main(page: ft.Page):
         if access_widgets["react_type"].value == "Bars":
             config["width"] = int(access_widgets["width"].value)
             config["separation"] = int(access_widgets["separation"].value)
-            config["position"] = access_widgets["bar_pos"].value
         else:
             config["width"] = 1
             config["separation"] = 0
-            config["position"] = "Bottom"
+        config["position"] = access_widgets["bar_pos"].value
         config["wave"] = access_widgets["react_type"].value == "Waveform"
         config["color"] = ImageColor.getrgb(f"#{access_widgets['hex_color'].value.strip(' #')[0:6]}")
         config["zoom"] = access_widgets["zoom_checkbox"].value

@@ -130,7 +130,7 @@ def render(config: dict, progress, main):
     else:
         background = settings.background
         background = cv2.resize(background, settings.size, interpolation=cv2.INTER_CUBIC)
-        settings.backgrouind = None
+        settings.background = None
 
     path, file_name = os.path.split(settings.audio_file)
 
@@ -200,7 +200,6 @@ def render(config: dict, progress, main):
     progress.value = .99
     main.update()
 
-    print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
     combine_cmds = ["ffmpeg","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
 
     try:
