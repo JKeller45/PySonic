@@ -11,10 +11,14 @@ from Audio_Processing import pick_react
 
 config = {}
 access_widgets = {}
+prev_page = "start"
+curr_page = "start"
 
 def main(page: ft.Page):
     global config
     global access_widgets
+    global prev_page
+    global curr_page
     page.title = "PySonic"
     page.window_width = 800
     page.window_height = 500
@@ -26,6 +30,10 @@ def main(page: ft.Page):
     def continue_to_files(e):
         global config
         global access_widgets
+        global prev_page
+        global curr_page
+        prev_page = curr_page
+        curr_page = "files"
         page.clean()
         page.add(ft.Text("File Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
@@ -64,6 +72,10 @@ def main(page: ft.Page):
 
     def color_picker(e):
         global config
+        global prev_page
+        global curr_page
+        prev_page = curr_page
+        curr_page = "color"
         page.clean()
         picked_color = ft.canvas.Canvas([ft.canvas.Rect(0, 0, 320, 20, 0, ft.Paint(color="#ff0000"))])
 
@@ -179,7 +191,7 @@ def main(page: ft.Page):
             drag_interval=10,))
         hex_color = ft.TextField(label="Hex Color", width=150, height=60, max_length=6, counter_text="", prefix_text="#", on_change=hex_change)
         hex_color.value = picked_color._get_children()[0].paint.color.strip("#")
-        if config.get("background", 0) or config.get("bg_color", 0):
+        if prev_page != "files":
             access_widgets["hex_color"] = hex_color
             next_button = ft.ElevatedButton("Continue", on_click=continue_to_react_config)
         else:
@@ -188,6 +200,8 @@ def main(page: ft.Page):
         page.add(ft.Row([ft.Container(canvas, height=255, width=255), ft.Column([hex_color, row, ft.Container(picked_color, width=310, height=20), next_button])], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_react(e):
+        global prev_page
+        global curr_page
         if config.get("FILE", None) == None or config.get("FILE", None) == "" or \
             config.get("output", None) == None or config.get("output", None) == "":
             return
@@ -196,6 +210,8 @@ def main(page: ft.Page):
                 return
             config["background"] = access_widgets["bg_color"].value.strip(" #")[0:6]
         page.clean()
+        prev_page = curr_page
+        curr_page = "react"
         page.add(ft.Text("React Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
         
@@ -207,9 +223,13 @@ def main(page: ft.Page):
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_files), ft.ElevatedButton("Continue", on_click=continue_to_react_config)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_react_config(e):
+        global prev_page
+        global curr_page
         if access_widgets["react_type"].value != "Bars" and access_widgets["react_type"].value != "Waveform":
             return
         page.clean()
+        prev_page = curr_page
+        curr_page = "react_config"
         page.add(ft.Text("React Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
 
@@ -357,6 +377,8 @@ def main(page: ft.Page):
         cv2.waitKey(0)
 
     def continue_to_video_settings(e):
+        global prev_page
+        global curr_page
         if access_widgets["react_type"].value == "Bars":
             if access_widgets["bar_pos"].value == "" or access_widgets["bar_pos"].value == None:
                 return
@@ -367,6 +389,8 @@ def main(page: ft.Page):
                 int(access_widgets["separation"].value)
             except ValueError:
                 return
+        prev_page = curr_page
+        curr_page = "video_settings"
         if access_widgets.get("hex_color", None) is None or access_widgets["hex_color"].value == "":
             return
         if access_widgets["react_type"].value == "Bars":
@@ -408,8 +432,12 @@ def main(page: ft.Page):
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_react_config), ft.ElevatedButton("Render", on_click=continue_to_render)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_render(e):
+        global prev_page
+        global curr_page
         if access_widgets["frame_rate"].value == "" or access_widgets["vid_length"].value == "" or access_widgets["vid_res"].value == "":
             return
+        prev_page = curr_page
+        curr_page = "render"
         config["frame_rate"] = int(access_widgets["frame_rate"].value)
         config["length"] = int(access_widgets["vid_length"].value)
         if config["length"] <= -1:
