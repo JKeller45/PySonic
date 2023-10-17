@@ -14,6 +14,7 @@ import numpy.typing as npt
 import subprocess
 import warnings
 from sys import platform
+from PIL import Image, ImageColor
     
 def pick_react(args) -> npt.ArrayLike:
     background, num_bars, heights, avg_heights, settings = args
@@ -127,6 +128,8 @@ def render(config: dict, progress, main):
     elif type(settings.background) == str:
         background = cv2.imread(settings.background)
         background = cv2.resize(background, settings.size, interpolation=cv2.INTER_CUBIC)
+    elif type(settings.background) == list and len(settings.background) == 3:
+        background = cv2.cvtColor(np.array(Image.new(mode="RGB", size=(config["size"][0], config["size"][1]), color=tuple(settings.background))), cv2.COLOR_RGB2BGR)
     else:
         background = settings.background
         background = cv2.resize(background, settings.size, interpolation=cv2.INTER_CUBIC)
