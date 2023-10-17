@@ -279,6 +279,8 @@ def main(page: ft.Page):
                 return
         if access_widgets.get("hex_color", None) is None or access_widgets["hex_color"].value == "":
             return
+        if access_widgets["size"].value == "" or access_widgets["size"].value == None:
+            return
         if access_widgets["react_type"].value == "Bars":
             config["width"] = int(access_widgets["width"].value)
             config["separation"] = int(access_widgets["separation"].value)
