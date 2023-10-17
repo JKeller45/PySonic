@@ -7,14 +7,13 @@ from multiprocessing.managers import SharedMemoryManager
 import tomllib as tl
 import Functions as F
 from Classes import *
-import logging
 import os
 from itertools import cycle
 import numpy.typing as npt
 import subprocess
 import warnings
 from sys import platform
-from PIL import Image, ImageColor
+from PIL import Image
     
 def pick_react(args) -> npt.ArrayLike:
     background, num_bars, heights, avg_heights, settings = args
@@ -42,6 +41,7 @@ def render(config: dict, progress, main):
     progress (ttk.Progressbar): the progress bar in the UI. Used for updating
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
+    # import logging
     # logging.basicConfig(filename='log.log', level=logging.INFO, format='%(levelname)s %(name)s %(message)s')
     settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=np.array(config["size"]),
                             color=tuple(config["color"]), background=config["background"],frame_rate=config["frame_rate"],
