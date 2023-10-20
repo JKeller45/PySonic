@@ -50,23 +50,18 @@ Once FFmpeg is installed, simply run the executable and start rendering!
 
 This is not meant to be a definitive roadmap with all planned features. It is intended to be a guide for approximately when specific upcoming features should be available. It is subject to change.
 
-#### 1.0 - Released!
-
-- MacOS and Linux versions
-- Continuous integration for Windows, macOS, and Linux
-- Automated stability testing
-
-#### 1.1 - Under Development
+#### 1.1 - Released!
 
 - Reintroduction of color picker (removed during the switch to Flet)
 - Additional waveform react placements
 - Render previews
 
-#### 1.2
+#### 1.2 - Under Development!
 
 - Longer video backgrounds
 - Render queue
 - Animated GIF backgrounds (only static GIFs are currently supported)
+- Centered react and waveforms
 
 #### 1.3
 - Significant Backend overhauls
