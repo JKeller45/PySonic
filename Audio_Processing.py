@@ -7,13 +7,13 @@ from multiprocessing.managers import SharedMemoryManager
 import tomllib as tl
 import Functions as F
 from Classes import *
-import logging
 import os
 from itertools import cycle
 import numpy.typing as npt
 import subprocess
 import warnings
 from sys import platform
+from PIL import Image
     
 def pick_react(args) -> npt.ArrayLike:
     background, num_bars, heights, avg_heights, settings = args
@@ -41,8 +41,8 @@ def render(config: dict, progress, main):
     progress (ttk.Progressbar): the progress bar in the UI. Used for updating
     main (tk.mainwindow): the main window. Used for refreshing the app
     """
+    # import logging
     # logging.basicConfig(filename='log.log', level=logging.INFO, format='%(levelname)s %(name)s %(message)s')
-    # logging.log(logging.INFO, "Starting Render...")
     settings = Settings(audio_file=config["FILE"], output=config["output"], length=config["length"], size=np.array(config["size"]),
                             color=tuple(config["color"]), background=config["background"],frame_rate=config["frame_rate"],
                             separation=config["separation"], position=config["position"], AISS=config["AISS"], 
@@ -61,7 +61,6 @@ def render(config: dict, progress, main):
         settings.width = max(settings.width // 2, 1)
         settings.separation //= 2
 
-    # logging.log(logging.INFO, "Loading Audio...")
     if settings.audio_file[-4:] != ".wav":
         non_wave_input = True
         convert_args = ["ffmpeg","-y", "-i", settings.audio_file, "-acodec", "pcm_s32le", "-ar", "44100", f"{settings.audio_file}.wav", ]
@@ -76,26 +75,25 @@ def render(config: dict, progress, main):
                     settings.audio_file = f"{settings.audio_file}.wav"
         except Exception as e:
             raise e
-            pass
 
     fs_rate, audio = wavfile.read(settings.audio_file)
-    #print ("Frequency sampling", fs_rate)
     l_audio = len(audio.shape)
     if l_audio == 2:
         audio = audio.sum(axis=1) / 2
     N = audio.shape[0]
     secs = N / float(fs_rate)
-    #print ("secs", secs)
 
     if settings.wave:
         settings.separation = 0
         settings.width = 1
     if settings.position == "Left" or settings.position == "Right":
         num_bars = settings.size[1] // (settings.width + settings.separation)
+        if num_bars >= settings.size[1]:
+            num_bars = settings.size[1] - 1
     else:
         num_bars = settings.size[0] // (settings.width + settings.separation)
-    if num_bars >= settings.size[0]:
-        num_bars = settings.size[0] - 1
+        if num_bars >= settings.size[0]:
+            num_bars = settings.size[0] - 1
     
     length_in_seconds = secs if settings.length <= 0 else min([settings.length, secs])
     settings.length = min([settings.length, secs])
@@ -103,8 +101,7 @@ def render(config: dict, progress, main):
     backgrounds = None
     background = None
 
-    # logging.log(logging.INFO, "Loading Background...")
-    if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
+    if type(settings.background) == str and settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
         vid = cv2.VideoCapture(settings.background)
         backgrounds = []
         background = []
@@ -131,9 +128,12 @@ def render(config: dict, progress, main):
     elif type(settings.background) == str:
         background = cv2.imread(settings.background)
         background = cv2.resize(background, settings.size, interpolation=cv2.INTER_CUBIC)
+    elif type(settings.background) == list and len(settings.background) == 3:
+        background = cv2.cvtColor(np.array(Image.new(mode="RGB", size=(config["size"][0], config["size"][1]), color=tuple(settings.background))), cv2.COLOR_RGB2BGR)
     else:
         background = settings.background
         background = cv2.resize(background, settings.size, interpolation=cv2.INTER_CUBIC)
+        settings.background = None
 
     path, file_name = os.path.split(settings.audio_file)
 
@@ -141,8 +141,6 @@ def render(config: dict, progress, main):
         result = cv2.VideoWriter(f'{settings.output}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), settings.frame_rate, (settings.size[0] * 2, settings.size[1] * 2))
     else:
         result = cv2.VideoWriter(f'{settings.output}{file_name}.mp4', cv2.VideoWriter_fourcc(*'mp4v'), settings.frame_rate, settings.size)
-
-    # logging.log(logging.INFO, "Processing Audio...")
 
     audio = audio[:int(fs_rate * length_in_seconds)]
     hop_scale = 2
@@ -154,8 +152,6 @@ def render(config: dict, progress, main):
     heights = []
     args = []
 
-    # logging.log(logging.INFO, "Calculating Heights...")
-
     for amp in amps:
         heights = [0] * num_bars
         heights = F.bins(freqs, amp, heights, num_bars, settings)
@@ -164,16 +160,13 @@ def render(config: dict, progress, main):
         else:
             args.append((Frame_Information(False, "", 0, 0), num_bars, heights, heights.mean(axis=0), settings))
 
-    # logging.log(logging.INFO, "Calculating Average Heights...")
-
-    heights = signal.savgol_filter(heights, 30, 15, axis=0)
+    heights = signal.savgol_filter(heights, 60, 15, axis=0)
     max_height = max(max(arg[2]) for arg in args)
     average_heights = [arg[3] / 20000000 + 1 for arg in args]
     average_lows = [np.mean(arg[2][0:4 * num_bars // 100]) * (settings.size[1] // 5) // max_height for arg in args]
     average_lows = signal.savgol_filter(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
 
-    # logging.log(logging.INFO, "Rendering...")
     with SharedMemoryManager() as smm:
         frame_bg = smm.SharedMemory(size=background.nbytes)
         shared_background = np.ndarray(background.shape, dtype=np.uint8, buffer=frame_bg.buf)
@@ -182,7 +175,7 @@ def render(config: dict, progress, main):
         progress_counter = 0
         args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
                     (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
-        with Pool(processes=4, maxtasksperchild=50) as pool:
+        with Pool(processes=min(5, max(1, os.cpu_count() // 2)), maxtasksperchild=30) as pool:
             outputs = pool.imap(pick_react, args)
             sr = None
             if settings.AISS:
@@ -190,8 +183,7 @@ def render(config: dict, progress, main):
                 try:
                     path = F.find_by_relative_path(r"assets/ESPCN_x2.pb")
                 except Exception as e:
-                    # logging.error(e, exc_info=True)
-                    pass
+                    raise e
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
@@ -211,12 +203,12 @@ def render(config: dict, progress, main):
     progress.value = .99
     main.update()
 
-    # logging.log(logging.INFO, "Combining Audio...")
-    print(f'{settings.output}{file_name}.mp4', settings.audio_file, f"{settings.output}{file_name}_Audio.mp4")
     combine_cmds = ["ffmpeg","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
 
     try:
         if platform == "win32":
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             if subprocess.run(combine_cmds, startupinfo=si).returncode == 0:
                 si = subprocess.STARTUPINFO()
                 si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -230,9 +222,7 @@ def render(config: dict, progress, main):
                     os.remove(settings.audio_file)
     except Exception as e:
         raise e
-        pass
 
-    # logging.log(logging.INFO, "Done")
     progress.value = 1
     main.update()
 

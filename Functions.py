@@ -49,9 +49,9 @@ def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: S
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord - height), settings.color, -1)
     return output_image
 
-def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
+def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
     """
-    Draws the bars for a given frame. This method is designed to be used in a multithreaded way.
+    Draws the react bars for a given frame
 
     Parameters
     ----------
@@ -64,20 +64,22 @@ def draw_bars(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
     -------
     background (np.ndarray): the final frame with all bars drawn over its
     """
-    existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
-    shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
-    if background.video:
-        shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
-    else:
-        shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
-    new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
-    if background.video:
-        new_bg[:] = shared_bg[background.frame_number][:]
-    else:
-        new_bg[:] = shared_bg[:]
-    background = new_bg
+    if type(background) == Frame_Information:
+        existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
+        shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
+        if background.video:
+            shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
+        else:
+            shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
+        new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
+        if background.video:
+            new_bg[:] = shared_bg[background.frame_number][:]
+        else:
+            new_bg[:] = shared_bg[:]
+        background = new_bg
+        existing_shm.close()
 
-    offset = 0
+    offset = settings.separation // 2 
     if settings.zoom:
         background = zoom_effect(background, cummulative_avg_heights[1])
 
@@ -151,18 +153,29 @@ def add_height(heights: npt.ArrayLike, group: int, amp: float, angle: float, sid
         add_height(heights, group + 1, damping(amp, angle, group), ang, "right", width, damping, num_bars,settings)
 
 def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
-    existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
-    shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
-    if background.video:
-        shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
-    else:
-        shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
-    new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
-    if background.video:
-        new_bg[:] = shared_bg[background.frame_number][:]
-    else:
-        new_bg[:] = shared_bg[:]
-    background = new_bg
+    """
+    Draws the react waveform for a given frame
+
+    Parameters
+    ----------
+    background (np.ndarray): the background image being drawn over. Should be a deepcopy.
+    num_bars (int): the number of bars being drawn on the frame
+    heights (list): heights for each bar being drawn
+    settings (Settings): the settings dataclass that contains the render settings
+    """
+    if type(background) == Frame_Information:
+        existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
+        shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
+        if background.video:
+            shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
+        else:
+            shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
+        new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
+        if background.video:
+            new_bg[:] = shared_bg[background.frame_number][:]
+        else:
+            new_bg[:] = shared_bg[:]
+        background = new_bg
 
     if settings.zoom:
         background = zoom_effect(background, cummulative_avg_heights[1])
@@ -195,6 +208,22 @@ def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
     return background
 
 def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: Settings, height: int, last_coord: tuple[int, int]) -> tuple[int, int]:
+    """
+    Draws a wave segment on an output image.
+
+    Parameters
+    ----------
+    output_image (npt.ArrayLike): The output image to draw on.
+    xcoord (int): The x-coordinate of the starting point of the wave segment.
+    ycoord (int): The y-coordinate of the starting point of the wave segment.
+    settings (Settings): An object containing settings for the wave segment.
+    height (int): The height of the wave segment.
+    last_coord (tuple[int, int]): A tuple containing the x and y coordinates of the last point drawn.
+
+    Returns
+    -------
+    tuple[int, int]: A tuple containing the x and y coordinates of the last point drawn.
+    """    
     if settings.position == "Right":
         output_image = cv2.line(output_image, last_coord, (xcoord - height, ycoord + settings.width), settings.color, 2)
         last_coord = (xcoord - height, ycoord + settings.width)
@@ -210,6 +239,19 @@ def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, set
     return last_coord
 
 def generate_snowfall_matrix(cummulative_avg_heights: int, angle: int, settings: Settings) -> npt.ArrayLike:
+    """
+    Generates a matrix of points for the snowfall effect as (x,y) coordinates
+
+    Parameters
+    ----------
+    cummulative_avg_heights (int): The average height of the bars in the frame and all frames before.
+    angle (int): The angle for the snowfall to move.
+    settings (Settings): An object containing settings for the snowfall.
+
+    Returns
+    -------
+    npt.ArrayLike: An array of x-y points for the snowfall effect.
+    """
     np.random.seed(settings.snow_seed)
     matrix = np.random.choice(settings.size[0] * settings.size[1] // 150, size=settings.size)
     x_shift = int(math.cos(math.radians(angle)) * cummulative_avg_heights)
@@ -220,11 +262,38 @@ def generate_snowfall_matrix(cummulative_avg_heights: int, angle: int, settings:
 
 @njit
 def create_snowfall(img: npt.ArrayLike, snow_matrix: npt.ArrayLike, color: tuple[int, int, int]) -> npt.ArrayLike:
+    """
+    Draws the snowfall effect on the output image
+
+    Parameters
+    ----------
+    img (numpy.ndarray): The image to apply the snowfall effect to.
+    snow_matrix (numpy.ndarray): The snowfall matrix to use.
+    color (tuple[int, int, int]): The (R, G, B) color tuple to use for the snowfall.
+
+    Returns
+    -------
+    numpy.ndarray: The modified image with the snowfall effect applied.
+    """
+
     for x in snow_matrix:
         img = circle(img, x, 4, color)
     return img
 
 def zoom_effect(img: npt.ArrayLike, zoom_height: float, coord: tuple[int, int] = None) -> npt.ArrayLike:
+    """
+    Applies a zoom effect to an image.
+
+    Parameters
+    ----------
+    img (numpy.ndarray): The image to apply the zoom effect to.
+    zoom_height (float): The height of the zoom effect to be converted into a zoom amount.
+    coord (tuple[int, int], optional): The coordinates to zoom in on. If None, the center of the image is used. Defaults to None.
+
+    Returns
+    -------
+    numpy.ndarray: The zoomed image.
+    """
     zoom_amt = 1 + zoom_height / 300 * .15
     h, w, _ = [zoom_amt * i for i in img.shape]
     if coord is None: 
@@ -237,8 +306,91 @@ def zoom_effect(img: npt.ArrayLike, zoom_height: float, coord: tuple[int, int] =
 
 @njit
 def circle(img: npt.ArrayLike, coord: tuple[int, int], radius: int, color: tuple[int, int, int]) -> npt.ArrayLike:
+    """
+    Draws a circle on the given image at the specified coordinates with the given radius and color.
+
+    Parameters
+    ----------
+    img (numpy.ndarray): The image on which to draw the circle.
+    coord (tuple[int, int]): The (x, y) coordinates of the center of the circle.
+    radius (int): The radius of the circle.
+    color (tuple[int, int, int]): The (R, G, B) color tuple to use for the circle.
+
+    Returns
+    -------
+    numpy.ndarray: The modified image with the circle drawn on it.
+    """
+    
     for x in range(coord[0] - radius, coord[0] + radius):
         for y in range(coord[1] - radius, coord[1] + radius):
             if (x - coord[0]) ** 2 + (y - coord[1]) ** 2 < radius ** 2 and x < len(img[0]) and y < len(img) and x >= 0 and y >= 0:
                 img[y][x] = color
     return img
+
+def hsv_to_rgb(h: float, s: float, v: float) -> tuple[int, int, int]:
+    """
+    Converts HSV color values to RGB color values.
+
+    Parameters
+    ----------
+    h: Hue value (0-360)
+    s: Saturation value (0-1)
+    v: Value (brightness) value (0-1)
+    
+    Returns
+    -------
+    tuple[int, int, int]: Tuple of RGB color values (0-255)
+    """
+    if s == 0:
+        return int(v * 255), int(v * 255), int(v * 255)
+    else:
+        h /= 60
+        i = int(h)
+        f = h - i
+        p = v * (1 - s)
+        q = v * (1 - s * f)
+        t = v * (1 - s * (1 - f))
+        if i == 0:
+            return int(v * 255), int(t * 255), int(p * 255)
+        elif i == 1:
+            return int(q * 255), int(v * 255), int(p * 255)
+        elif i == 2:
+            return int(p * 255), int(v * 255), int(t * 255)
+        elif i == 3:
+            return int(p * 255), int(q * 255), int(v * 255)
+        elif i == 4:
+            return int(t * 255), int(p * 255), int(v * 255)
+        else:
+            return int(v * 255), int(p * 255), int(q * 255)
+        
+def rgb_to_hsv(r: int, g: int, b: int) -> tuple[float, float, float]:
+    """
+    Converts RGB color values to HSV color values.
+
+    Parameters
+    ----------
+    r: Red value (0-255)
+    g: Green value (0-255)
+    b: Blue value (0-255)
+    
+    Returns
+    ------- 
+    tuple[float, float, float]: Tuple of HSV color values (0-360, 0-1, 0-1)
+    """
+    r, g, b = r / 255.0, g / 255.0, b / 255.0
+    cmax, cmin = max(r, g, b), min(r, g, b)
+    delta = cmax - cmin
+    if delta == 0:
+        hue = 0
+    elif cmax == r:
+        hue = ((g - b) / delta) % 6
+    elif cmax == g:
+        hue = (b - r) / delta + 2
+    else:
+        hue = (r - g) / delta + 4
+    hue = round(hue * 60)
+    if hue < 0:
+        hue += 360
+    saturation = 0 if cmax == 0 else delta / cmax
+    value = cmax
+    return hue, saturation, value

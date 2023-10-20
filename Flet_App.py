@@ -4,10 +4,21 @@ import numpy as np
 from PIL import ImageColor, Image
 from Audio_Processing import render
 from multiprocessing import freeze_support
+from PIL import ImageColor
+from Classes import Settings
+import Functions as F
+from Audio_Processing import pick_react
+
+config = {}
+access_widgets = {}
+prev_page = "start"
+curr_page = "start"
 
 def main(page: ft.Page):
-    config = {}
-    access_widgets = {}
+    global config
+    global access_widgets
+    global prev_page
+    global curr_page
     page.title = "PySonic"
     page.window_width = 800
     page.window_height = 500
@@ -17,26 +28,30 @@ def main(page: ft.Page):
     page.add(ft.Text("Let's start rendering"))
 
     def continue_to_files(e):
+        global config
+        global access_widgets
+        global prev_page
+        global curr_page
+        prev_page = curr_page
+        curr_page = "files"
         page.clean()
-        config.clear()
         page.add(ft.Text("File Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
 
         def on_audio_file_picker_result(result):
             if result.files is not None:
-                config["FILE"] = result.files[0].path
+                config["FILE"] = str(result.files[0].path)
 
         audio_file_picker = ft.FilePicker(on_result=on_audio_file_picker_result)
         page.overlay.append(audio_file_picker)
 
         def on_bg_file_picker_result(result):
             if result.files is not None:
-                config["background"] = result.files[0].path
+                config["background"] = str(result.files[0].path)
 
         background_picker = ft.FilePicker(on_result=on_bg_file_picker_result)
         page.overlay.append(background_picker)
-        bg_color = ft.TextField(label="Input Hex Color", width=150, height=50)
-        access_widgets["bg_color"] = bg_color
+        bg_color = ft.ElevatedButton("Select Color", on_click=color_picker)
 
         def on_output_picker_result(result):
             if result.path is not None:
@@ -47,7 +62,7 @@ def main(page: ft.Page):
         page.add(ft.Column([
             ft.ElevatedButton("Select Audio File", on_click=lambda _: audio_file_picker.pick_files(allow_multiple=False, file_type="CUSTOM", allowed_extensions=["mp3", "wav", "webm", "ogg", "aac", "flac", "aiff", "wma", "oga"])),
             ft.Row([
-                ft.ElevatedButton("Select Background", on_click=lambda _: background_picker.pick_files(allow_multiple=False, file_type="CUSTOM", allowed_extensions = ["png", "jpg", "jpeg", "gif", "mp4", "mov", "wmv", "avi"])),
+                ft.ElevatedButton("Select Media", on_click=lambda _: background_picker.pick_files(allow_multiple=False, file_type="CUSTOM", allowed_extensions = ["png", "jpg", "jpeg", "gif", "mp4", "mov", "wmv", "avi"])),
                 ft.Text("OR", size=15),
                 bg_color], alignment=ft.MainAxisAlignment.CENTER),
             ft.ElevatedButton("Select Output Folder", on_click=lambda _: output_folder_picker.get_directory_path())
@@ -55,15 +70,148 @@ def main(page: ft.Page):
         page.add(ft.Container(height=40))
         page.add(ft.ElevatedButton("Continue", on_click=continue_to_react))
 
+    def color_picker(e):
+        global config
+        global prev_page
+        global curr_page
+        prev_page = curr_page
+        curr_page = "color"
+        page.clean()
+        picked_color = ft.canvas.Canvas([ft.canvas.Rect(0, 0, 320, 20, 0, ft.Paint(color="#ff0000"))])
+
+        def change_hsv(e):
+            rgb_tuple = F.hsv_to_rgb(hue.value, 1, 1)
+            color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
+            primary.paint.gradient.colors[0] = ft.colors.with_opacity(1, color)
+            primary.paint.gradient.colors[1] = ft.colors.with_opacity(0, color)
+
+            picker.x = saturation.value / 100 * 255
+            picker.y = (1 - brightness.value / 100) * 255
+
+            rgb_tuple = F.hsv_to_rgb(hue.value, saturation.value / 100, brightness.value / 100)
+            color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
+            picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
+            picked_color._get_children()[0].paint.color = color
+            hex_color.value = color.strip("#")
+
+            page.update()
+
+        def pan_start(e: ft.DragStartEvent):
+            coords[0] = e.local_x
+            coords[1] = e.local_y
+            coords[0] = max(min(coords[0], 255), 0)
+            coords[1] = max(min(coords[1], 255), 0)
+
+            bright = (255 - coords[1]) / 255
+            sat = coords[0] / 255
+            rgb = F.hsv_to_rgb(hue.value, sat, bright)
+            color = "#" + "".join([hex(int(rgb[0]))[2:].zfill(2), hex(int(rgb[1]))[2:].zfill(2), hex(int(rgb[2]))[2:].zfill(2)])
+            saturation.value = sat * 100
+            brightness.value = bright * 100
+
+            picker.x = coords[0]
+            picker.y = coords[1]
+            picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
+            picked_color._get_children()[0].paint.color = color
+            hex_color.value = color.strip("#")
+            page.update()
+
+        def pan_update(e: ft.DragUpdateEvent):
+            coords[0] = e.local_x
+            coords[1] = e.local_y
+            coords[0] = max(min(coords[0], 255), 0)
+            coords[1] = max(min(coords[1], 255), 0)
+
+            bright = (255 - coords[1]) / 255
+            sat = coords[0] / 255
+            rgb = F.hsv_to_rgb(hue.value, sat, bright)
+            color = "#" + "".join([hex(int(rgb[0]))[2:].zfill(2), hex(int(rgb[1]))[2:].zfill(2), hex(int(rgb[2]))[2:].zfill(2)])
+            saturation.value = sat * 100
+            brightness.value = bright * 100
+
+            picker.x = coords[0]
+            picker.y = coords[1]
+            picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
+            picked_color._get_children()[0].paint.color = color
+            hex_color.value = color.strip("#")
+            page.update()
+
+        def hex_change(e):
+            text = "#" + e.control.value
+            if len(text) == 0 or len(text) > 7:
+                return
+            if text[0] == "#" and len(text) == 7:
+                red = text[1:3]
+                green = text[3:5]
+                blue = text[5:7]
+                try:
+                    red = int(red, 16)
+                    green = int(green, 16)
+                    blue = int(blue, 16)
+                except ValueError:
+                    return
+                hsv = F.rgb_to_hsv(red, green, blue)
+                hue.value = hsv[0]
+                saturation.value = hsv[1] * 100
+                brightness.value = hsv[2] * 100
+
+                picker.x = saturation.value / 100 * 255
+                picker.y = (1 - brightness.value / 100) * 255
+
+                rgb_tuple = F.hsv_to_rgb(hue.value, saturation.value / 100, brightness.value / 100)
+                color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
+                picker.paint.gradient = ft.PaintRadialGradient((picker.x, picker.y), 5, colors=[ft.colors.with_opacity(1, color), ft.colors.with_opacity(1, "#000000")])
+                picked_color._get_children()[0].paint.color = color
+
+                rgb_tuple = F.hsv_to_rgb(hue.value, 1, 1)
+                color = "#" + "".join([hex(int(rgb_tuple[0]))[2:].zfill(2), hex(int(rgb_tuple[1]))[2:].zfill(2), hex(int(rgb_tuple[2]))[2:].zfill(2)])
+                primary.paint.gradient.colors[0] = ft.colors.with_opacity(1, color)
+                primary.paint.gradient.colors[1] = ft.colors.with_opacity(0, color)
+
+                page.update()
+
+        page.add(ft.Text("Color Selection", size=25, weight=ft.FontWeight.BOLD))
+        page.add(ft.Container(height=10))
+        hue = ft.Slider(label="Hue", min=0, max=359, width=255, height=25, value=0, on_change=change_hsv)
+        saturation = ft.Slider(label="Saturation", min=0, max=100, width=255, value=100, height=25, on_change=change_hsv)
+        brightness = ft.Slider(label="Brightness", min=0, max=100, width=255, value=100, height=25, on_change=change_hsv)
+        bg = ft.canvas.Rect(0, 0, 255, 255, 0, ft.Paint(color="#000000"))
+        primary = ft.canvas.Rect(0, 0, 255, 255, 0, ft.Paint(gradient=ft.PaintLinearGradient((0, 0), (0, 255), colors=[ft.colors.with_opacity(1, "#ff0000"), ft.colors.with_opacity(0, "#ff0000")])))
+        white = ft.canvas.Rect(0, 0, 255, 255, 0, ft.Paint(gradient=ft.PaintLinearGradient((0, 0), (255, 0), colors=[ft.colors.with_opacity(1, "#ffffff"), ft.colors.with_opacity(0, "#ffffff")])))
+        black = ft.canvas.Rect(0, 0, 255, 255, 0, ft.Paint(gradient=ft.PaintLinearGradient((0, 0), (0, 255), colors=[ft.colors.with_opacity(0, "#000000"), ft.colors.with_opacity(1, "#000000")])))
+        row = ft.Row([
+            ft.Column([ft.Text("Hue:"), ft.Text("Saturation:"), ft.Text("Brightness:")], alignment=ft.MainAxisAlignment.CENTER, spacing=10),
+            ft.Column([hue, saturation, brightness], alignment=ft.MainAxisAlignment.CENTER, spacing=5)
+            ], alignment=ft.MainAxisAlignment.CENTER, spacing=5)
+        coords = [255, 0]
+        picker = ft.canvas.Circle(255, 0, 5, ft.Paint(gradient=ft.PaintRadialGradient((255, 0), 5, colors=[ft.colors.with_opacity(1, picked_color._get_children()[0].paint.color), ft.colors.with_opacity(1, "#000000")])))
+        canvas = ft.canvas.Canvas([bg, primary, white, black, picker], width=255, height=255, content=ft.GestureDetector(
+            on_pan_start=pan_start,
+            on_pan_update=pan_update,
+            drag_interval=10,))
+        hex_color = ft.TextField(label="Hex Color", width=150, height=60, max_length=6, counter_text="", prefix_text="#", on_change=hex_change)
+        hex_color.value = picked_color._get_children()[0].paint.color.strip("#")
+        if prev_page != "files":
+            access_widgets["hex_color"] = hex_color
+            next_button = ft.ElevatedButton("Continue", on_click=continue_to_react_config)
+        else:
+            access_widgets["bg_color"] = hex_color
+            next_button = ft.ElevatedButton("Continue", on_click=continue_to_files)
+        page.add(ft.Row([ft.Container(canvas, height=255, width=255), ft.Column([hex_color, row, ft.Container(picked_color, width=310, height=20), next_button])], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
+
     def continue_to_react(e):
+        global prev_page
+        global curr_page
         if config.get("FILE", None) == None or config.get("FILE", None) == "" or \
             config.get("output", None) == None or config.get("output", None) == "":
             return
         if config.get("background", None) == None or config.get("background", None) == "":
-            if access_widgets["bg_color"].value == "":
+            if access_widgets.get("bg_color", "").value == "":
                 return
             config["background"] = access_widgets["bg_color"].value.strip(" #")[0:6]
         page.clean()
+        prev_page = curr_page
+        curr_page = "react"
         page.add(ft.Text("React Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
         
@@ -75,61 +223,202 @@ def main(page: ft.Page):
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_files), ft.ElevatedButton("Continue", on_click=continue_to_react_config)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_react_config(e):
+        global prev_page
+        global curr_page
+        if access_widgets["react_type"].value != "Bars" and access_widgets["react_type"].value != "Waveform":
+            return
         page.clean()
+        prev_page = curr_page
+        curr_page = "react_config"
         page.add(ft.Text("React Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
 
-        hex_color = ft.TextField(label="Bar Color (hex)", width=150, height=50)
+        hex_color = ft.ElevatedButton("Select Color", on_click=color_picker)
         zoom_checkbox = ft.Checkbox(label="Zoom Effect", value=False, width=150, height=50)
         snowfall_checkbox = ft.Checkbox(label="Snowfall Effect", value=False, width=150, height=50)
-        access_widgets["hex_color"] = hex_color
         access_widgets["zoom_checkbox"] = zoom_checkbox
         access_widgets["snowfall_checkbox"] = snowfall_checkbox
+        if access_widgets.get("bar_pos") is not None:
+            bar_pos = access_widgets["bar_pos"]
+        else:
+            bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right")], label="React Position", width=150, height=60)
+        access_widgets["bar_pos"] = bar_pos
 
         if access_widgets["react_type"].value == "Bars":
-            width = ft.TextField(label="Bar Width", width=150, height=60)
-            separation = ft.TextField(label="Bar Separation", width=150, height=60)
-            bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right")], label="Bar Position", width=150, height=60)
+            if access_widgets.get("width") is not None:
+                width = access_widgets["width"]
+            else:
+                width = ft.TextField(label="Bar Width", width=150, height=60)
+            if access_widgets.get("separation") is not None:
+                separation = access_widgets["separation"]
+            else:
+                separation = ft.TextField(label="Bar Separation", width=150, height=60)
             page.add(ft.Column([
                 ft.Row([width, separation, bar_pos], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
-                ft.Row([hex_color, zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
-            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=20))
+                ft.Row([ft.Container(hex_color, width=150, height=60), zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20)
+            ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=30))
             access_widgets["width"] = width
             access_widgets["separation"] = separation
-            access_widgets["bar_pos"] = bar_pos
         else:
-            page.add(ft.Row([hex_color, zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
+            page.add(ft.Column([ft.Row([ft.Container(hex_color, width=150, height=60), bar_pos], alignment=ft.MainAxisAlignment.CENTER, spacing=20), ft.Row([zoom_checkbox, snowfall_checkbox], alignment=ft.MainAxisAlignment.CENTER, spacing=20)], alignment=ft.CrossAxisAlignment.CENTER, spacing=20))
 
         page.add(ft.Container(height=10))
 
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_react), ft.ElevatedButton("Continue", on_click=continue_to_video_settings)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
-    def continue_to_video_settings(e):
+    def preview_render(e):
+        if access_widgets["react_type"].value == "Bars":
+            if access_widgets["width"].value == "" or access_widgets["separation"].value == "":
+                return
+            try:
+                int(access_widgets["width"].value)
+                int(access_widgets["separation"].value)
+            except ValueError:
+                return
+        if access_widgets["bar_pos"].value == "" or access_widgets["bar_pos"].value == None:
+                return
+        if access_widgets.get("hex_color", None) is None or access_widgets["hex_color"].value == "":
+            return
+        if access_widgets["vid_res"].value == "" or access_widgets["vid_res"].value == None:
+            return
         if access_widgets["react_type"].value == "Bars":
             config["width"] = int(access_widgets["width"].value)
             config["separation"] = int(access_widgets["separation"].value)
-            config["position"] = access_widgets["bar_pos"].value
         else:
             config["width"] = 1
             config["separation"] = 0
-            config["position"] = "Bottom"
+        config["position"] = access_widgets["bar_pos"].value
         config["wave"] = access_widgets["react_type"].value == "Waveform"
         config["color"] = ImageColor.getrgb(f"#{access_widgets['hex_color'].value.strip(' #')[0:6]}")
         config["zoom"] = access_widgets["zoom_checkbox"].value
         config["snowfall"] = access_widgets["snowfall_checkbox"].value
+        if access_widgets["vid_res"].value == "720p":
+            config["size"] = [1280, 720]
+        elif access_widgets["vid_res"].value == "1080p":
+            config["size"] = [1920, 1080]
+        elif access_widgets["vid_res"].value == "1440p":
+            config["size"] = [2560, 1440]
+        elif access_widgets["vid_res"].value == "4K":
+            config["size"] = [3840, 2160]
+        config["AISS"] = access_widgets["AISS"].value
 
+        settings = Settings(audio_file=config["FILE"], output=config["output"], length=1, size=config["size"],
+                            color=tuple(config["color"]), background=config["background"],frame_rate=30,
+                            separation=config["separation"], position=config["position"], AISS=config["AISS"], 
+                            width=config["width"], wave=config["wave"], circular_looped_video=False, 
+                            snowfall=config["snowfall"], zoom=config["zoom"], snow_seed=int(np.random.rand() * 1000000))
+        
+        if settings.AISS:
+            settings.size = (settings.size[0] // 2, settings.size[1] // 2)
+            settings.width = max(settings.width // 2, 1)
+            settings.separation //= 2
+
+        settings.color = settings.color[::-1]
+
+        amps = [91385204, -70332821, 20983330, 29899741, -39100966, 17257047, -14741857, 20763890, -26742115, 23220687, -6281689, 31209471, -58296832, 25021803, 5486270, -4875238, 581075, -6776217, 5656454, -8561907, 28929124, -26993057, 8861312, 16394153, -23063547, -15894410, 48459851, -31672946, -9894865, 32174365, -21902105, -9439642, 22934538, -11652218, -5078458, 14512620, -5797821, -10324617, 16613676, 2105385, -8042112, -8756497, -5729123, 37381760, -35893431, 12550480, -4301695, 6864590, 9591430, -25558168, 12330897, 4870678, -1125739, -5519184, -3117327, 19336147, -33083008, 17122638, 16640028, -16231393, -16943655, 28082647, -12158857, 11478513, -16435716, 13679704, -11327162, 6696002, -13518467, 21626691, -2961459, -20620421, 17286491, 10961300, -20375529, 6599574, -4517805, -7990949, 29845431, -21526580, 3548070, -4352470, 8703548, -4787368, 1080339, -3999935, 2867401, 6087029, -8780547, -9795580, 23456064, -22188038, 19896385, -11451434, -1621093, -3685352, 22954176, -7812830, -13144486, 14277982, -8714521, 9134393, -20835919, 10029625, 589045, 24461372, -32263273, 9588786, -3391807, -3216980, 3794213, 4588089, 1571798, -1902838, 6906234, -14557448, 4176727, 5116110, -6293598, 7602241, -14871024, 26878298, -21469376, 5533685, 7913251, -24735182, 18671028, 2482101, -11663777, 12673115, -14143998, 17424594, -3900447, -10698010, 3394890, 9785974, 480872, -12054460, -12023224, 22760955, 147626, -14083020, -5156881, 35999164, -26317495, 1163910, -1574301, 10451249, -14828089, 4227383, 3780481, -2324067, 5495927, -6499146, 15301351, -26633070, 15049386, -1938792, -205034, 5813510, -11914564, 12428205, 524169, -15563959, 11866105, 9982243, -8689047, -12733997, 13475975, -6902291, 10632706, -14534509, 18930028, -29283079, 28090017, -16130316, 11030703, -5680748, -2220763, -3814196, 9793295, -3094584, -8461745, 17675795, -14896835, 6392160, 836488, -2886313, -3173042, -1430267, 14248010, -16067360, 9515269, 1259291, -1273242, -3316258, -6657429, 9689158, -3938844, -1656290, 2216672, 4609328, 6575281, -20439381, 22570966, -27336919, 15438784, 8609974, -13657224, 7372663, 3722815, -14197129, 7359403, 11009595, -17865454, 4428408, 12079296, -15986262, 12341798, -16711114, 20503880, -15707382, 13927240, -12791616, 
+            15178879, -10644438, -4044151, 7746367, -13159866, 18224087, -9742915, 858268, 549773, 3393228, -2088538, -2175491, -3267092, 3265579, 1612723, 6777475, -2877745, -4912764, -7063375, 23383168, -34232832, 21570325, -3592373, 
+            1395977, -350402, 6319101, -10524511, 10059098, -14265402, 9046026, 3213560, -22034356, 28998183, -8440031, -8238548, 9007171, -9520411, 20686028, -25069605, 5782012, 15355362, -21086528, 21092978, -27292733, 25331098, -5795079, -1674730, -3929973, 275929, 5340905, -912149, -4176588, 7133632, -13712716, 8720775, 6292564, -8794570, 2084371, 5816896, -14572786, 16401979, -15699818, 17802231, -16234970, 7310402, 11495702, -17047995, 3572734, 1060935, 1300423, -11012861, 15913571, -2171250, -9562999, 12692924, -12427112, 12209964, -8457940, 6956856, -8700109, 1518032, 4867538, -5072040, -766403, 11195211, -14200529, 5511869, 3588475, -5112174, 3376627, -2693268, 512137, -2966546, 11589106, -12890635, 11510363, -7376148, -636274, -2536647, 8494511, -13680809, 18742039, -12758426, 2298091, 4813248, 129613, -3483872, -7653166, 13127703, -13702945, 12184841, -2879098, -2399983, -4538627, 22921728, -27327039, 9039169, 468129, 4967102, -8619085, -721415, 10201630, -10872132, 9042354, 8988681, -24588252, 12055554, 2865392, -11804937, 14438333, -2039221, -6771322, 6558804, -6033114, 225964, 3881548, 1647859, -5266860, 977213, -1540495, 6254179, 445597, -4658830, -2998070, 8294870, -5710529, -1219206, 4433140, -3729509, 1188880, 5666394, -9047811, -1416619, 11607375, 647367, -15384397, 12881165, -4867650, -4556222, 8273772, -4604048, -1330789, 6610681, -7818880, 11036856, -14965544, 7504530, 3160387, -1619384, -7752853, 5472581, 11253453, -14338930, 5414028, -594988, -9478623, 16950974, -8620533, -2212389, 1167433, 9088609, -14674921, 8474843, 3716361, -2536404, -11289752, 22205513, -27786184, 16192773, 5461033, -13837270, 12063507, -12175846, 16386796, -20408836, 18636560, -13783905, 4905795, 2891659, 3008523, -6877210, 1784423, 1200584, 1155669, -3111531, -790265, 162373, 
+            -762408, 7992154, -14338790, 12071189, -304517, -7889061, 9259105, -3827531, -2289916, -4202940, 10796176, -7393585, -3527610, 16840239, -15187714, 6806910, -5344739, 1630045, 2646784, -3104915, 8293003, -10754910, 2777592, 
+            -2658534, -766430, 24058163, -27648707, 4507832, 7518472, -7512663, 631708, 8662926, -2278577, -2864010, -9124329, 15408912, -12336866, 14825856, -20666450, 21113296, -14809853, 5597213, 1422691, -7106715, 9621997, -2728026, -6783377, 5016866, 168386, 2174045, -1215463, 6196179, -11917751, 1586606, 10563868, -13528446, 8876234, -6762724, 6447390, -4419662, 8717681, -15943439, 13432816, -3970212, -2053122, -3894430, 14413467, -11331705, 512824, 
+            7293954, -13415404, 10003956, -657193, -316941, 1476014, -7142499, 11009627, -8768062, 4049701, -3628645, 2615864, 2167236, -5037934, 6623750, -6960727, 6716289, -5882613, 6123622, -14139890, 17135919, -13697638, 13248398, -6796247, 5225317, -13076174, 13285034, -12285062, 10361822, -7737469, 9274756, -5297554, -4575559, 11373919, -14338042, 14017969, -3930436, -5473502, -402924, 5547101, -1895918, 4555597, -12958409, 9533189, 3125298, -5035176, 2298773, -6438, -1253985, 2454608, -8241071, 467912, 11251887, -7262446, -918654, 4565434, -3095153, 1195801, -1635494, 3949365, -3280961, -1437322, 6675968, -12101448, 8214450, -2958197, 6501078, -4696691, -3220848, -342005, 9414852, -5742602, 3250813, -7128621, 6585271, -4723640, 1007962, 316097, -1495847, 3506266, -3278876, 4346260, -78878, -3554268, 5161167, -5262650, -625622, -600716, 6213316, -7462763, 10491059, -12546080, 8241373, -1814159, -1289251, 2046691, -6723356, 9349607, -2852526, -3710599, 5946290, -5139333, 5939985, -10831207, 7689697, -2973782, 8511043, -13691330, 12333959, -7145343, 281890, 11261049, -19909571, 13785467, -6444091, 7534264, -8415790, 4168805, 548050, -780737, 5051632, -9213531, 6161420, -3628932, 3625902, -2762931, -290663, 4891994, -12844961, 17527111, -17358472, 15938557, -14540806, 13640537, -5748622, -1170532, 118238, 1621431, -3565996, 2689480, 631697, -2537789, 6330999, -4328363, -1443279, 54561, 4151965, -2696348, -6683181, 15977203, -23269910, 23049130, -7735462, -7673867, 8051563, -4106181, 3563503, -2114960, 3695706, -6391181, 193233, 14779834, -23025911, 15779378, -7519735, 7636334, -2454277, -7342434, 5316388, -712704, 4803320, -9148494, 8729172, -5362791, 3943879, -4489543, 5583332, -8480804, 13827869, -13796528, 5916829, -4626431, 5952728, -1874161, -2297844, 793528, -2219877, 11233344, -8609197, -595794, 924786, 2957832, -8852495, 13712344, -17793718, 17968548, -8957185, 5255012, -6424372, 2441508, 5521358, -9789483, 7612485, -9005723, 9596471, -6215375, 4651723, -7488485, 8921071, -3965668, 
+            1268379, -7835898, 17213547, -14090846, 3908280, -249117, -1812634, 269543, 3337236, -183200, -1333077, -2440915, 4904950, -2871223, -3495980, 8160970, -5619966, 1832584, -325879, -730466, -2273051, 7201902, -8548954, 6742334, -8946045, 12483160, -3299010, -9825386, 11823395, -4358910, -7527996, 6882429, 5356305, -6831164, -145324, 6857716, -10435038, 6657143, -537411, -4660985, 7482675, -2407034, -2633441, 741400, 8013319, -9825850, -3486380, 
+            9591974, -6758003, -45026, 9382581, -9675891, 8047044, -8501721, 5476589, -9138958, 16359851, -15477530, 7813328, 3372330, -9143025, 8161960, -1148945, -4289188, -1785715, 3918252, 1872607, -3741299, 262609, 10852854, -16309392, 7096526, -2129646, -383880, 3652749, 1209670, -3112950, 2704361, -3094463, 557221, -2383321, 3755514, 1593503, -6580631, 2149835, 7572089, -8142709, 4454773, -3056826, -2209817, 5179548, -5381090, 7111932, -8879298, 13957225, -12530238, 3273536, -2094478, 3229481, 3616902, -8290915, 5113196, -1176464, 856686, -1464820, -958736, 649408, 5386593, -9857993, 8525173, -5621623, 8678138, -9357463, 2955630, -2985123, 4430547, 239259, -860904, 1625721, -1016193, -4535687, 5216832, -1657364, -1828959, 1025995, 2923573, -4767490, 1650656, 1890930, 75298, -3225472, 2408495, 144582, -5076324, 9148909, -5592834, -399778, 1512318, 1112821, -5677222, 8293221, -1332470, -5686399, 8694652, -8987174, 1918678, -2805417, 10115001, -5872043, -1653915, 5138921, -2526206, -3048273, 2964639, 1922468, -9216600, 11910126, -9637264, 6565160, -1667975, 1354911, -3983810, -2310652, 7987424, -6725725, 4432250, 727054, -2709569, -1661564, 4980183, -4981654, -350679, 8133441, -8803026, 3496319, 1349484, 1116840, -6620683, 7353929, -5879167, -290340, 6639898, -9531678, 13437707, -11759899, 7214337, -6915570, 2658579, 4186407, -4309443, -1017188, 4204800, -2401554, 1279047, -3347365, 3731579, 33995, 1582751, -6438878, 308734, 7812971, -7854213, 5110759, -7271138, 11596811, -7204579, -1101386, 5375322, -2445631, -4265282, 6045830, -9916377, 13020098, -8514061, 6770363, -5044340, 1444663, -1012907, 78899, -87079, 1648269, 112021, -4043107, 3671194, -518567, -2258527, 5560558, -4546732, -2434555, 9843710, -8554697, 4296507, -4827231, 5779604, -6164581, 274415, 4244057, -2894320, 5585748, -2512019, -5349367, 4199784, 792651, -1549327, -5409176, 10578875, -2495014, -5109273, 1905834, 2451656, 344436, -3978484, -132590, 4065047, -961966, -448993, -405912, -754677, 319103, -535456, -2377844, 3692019, 1210914, -1568640, 962056, -2266970, 2179645, -1005958, -589906, 1079114, -1982015, 3933542, -3792593, 2831107, -2797091, 3429673, -3250139, 1041481, -593582, 2426071, -1175513, -2549440, 5796184, -7260122, 4163982, -1826684, 3462026, -3551967, -1679395, 6371219, -3639880, -1716724, 4690810, -4692321, 4685162, -7011036, 7267349, -6907228, 4732162, -1449674, 1981145, -4205194, 6313785, -1394987, -4348906, 5444081, -4423258, -99606, 1961774, 
+            -872702, -2008005, 4986319, -3390362, 2278324, -3887658, 3659377, -570398, -3196641, 1956805, 698335, -352784, -37073, -2160974, 6976550, -6423761, -191129, 4069740, -1842590, -1189063, -150406, 3807237, -4748294, 3779354, -3130703, -1644864, 8668701, -9420161, 3182436, 472394, 3325546, -4674571, -170551, 2129009, 922587, -3591999, 2034436, 2489138, -6895022, 10585890, -8624350, 1640013, 393928, 712415, 1888211, -7511141, 7828856, -766471, 406838, -5261477, 3347752, 3474546, -5386993, 1626770, -2141957, 6611898, -4778768, -3989042, 9876428, -11000115, 10436824, -8834827, 4819103, -214852, 1073321, -5486483, 5766532, -4774512, 3942554, -3163072, 1397970, 3838186, -4472332, 4905141, -7163959, 6770091, -6297783, 4297682, -2232718, -875926, 2720245, 1018851, -648808, -3639832, 5111116, -2229389, -4447569, 5024229, -1884395, 3823231, -6118457, 5750735, -4077514, 2582038, -1335570, -1798518, 1990437, 1235043, -2362394, 1102926, -460767, 4169961, -8709577, 4792130, 2471195, -4684929, 1696180, 3555641, -2713373, -1433828, 2989232, -2957855, 3031952, -2146790, 1225880, -4164393, 8063165, -8569429, 5781767, -3495130, 4233951, -6491874, 8863177, -9467223, 5869544, 1142072, -4240747, -1910341, 6203461, -3393333, 1368609, -999045, 1959139, -1117474, -4483835, 8521458, -9836380, 7640035, -1374310, -2814927, 3500463, -4069852, 3913344, 18162, -6114432, 9807157, -9978887, 7533542, 1941345, -9143063, 4905454, 2148846, -5384272, 2279553, -581972, 4946297, -5927757, 4146284, -2580221, -3113262, 7530281, -4861311, -721242, 568096, 3739462, -3767546, 987404, 1900546, -6522354, 10883544, -8673443, 2393483, -747008, 4706145, -5259986, -136888, 275295, 896860, 2446267, 68158, -4768713, 2737855, 4928969, -7633920, -1863616, 7225829, -446583, -4663170, 1210847, 5469908, -8034332, 7920893, -6307978, -2003313, 8260315, -7345973, 4920811, -2106732, 1832379, -1823144, -995141, 3114190, -3436098, 2318985, 2208951, -4956202, 2222613, 3116454, -7839380, 9760224, -6672015, 649612, 1567871, -943852, -608032, 748079, 2220954, -5964758, 5741541, -1925855, 780778, -2062376, 1818685, 687856, -3387561, 2622797, -1493924, 4243302, -4428539, 2254875, -3170754, 2996653, -526898, -41143, -1375599, 2400462, 874794, -4595463, 3969423, -1699478, 977215, -4747451, 10002920, -11875432, 8987333, -1137213, -2061392, 194026, -3534751, 5990126, -3732213, -176767, 1893518, -1861958, 4260174, -6957770, 6173912, -2993550, 3269143, -5687681, 6885639, -6242781, 2245053, 2108315, -2122843, 641640, -3648592, 7360709, -4321676, -1173126, 3305428, -2936703, 1749311, -1480480, 942139, -2930136, 8995703, -10554553, 5030027, 165158, -655041, -182088, -1194184, 5973599, -11392853, 11480334, -5905604, 1508734, -1444369, 1923932, -2261779, 1325069, 1359727, -6462461, 11196473, -8086172, 3083168, -3260745, 5196169, -4169730, 1712794, -924219, -2078533, 4253424, -120804, -4269566, 2865761, 494538, 207454, -2630605, -127787, 4504505, -3563809, 2955881, -4927675, 2949148, 1092061, -317035, -3789140, 4691938, -2569376, 4979317, -8027387, 4583901, 2333114, -5648046, 2468302, -327557, 1567416, -3581928, 3986789, -910612, -3288494, 2980437, 1368102, -672002, -4181219, 7038431, -3546159, -3617763, 4091105, -1271573, -738148, 2965599, -5684953, 8776491, -6139402, 672358, 485146, 313028, 815115, -3306870, 2407334, 2290514, -2587403, 347198, -3129741, 4922378, 135319, -5503125, 4195103, 4197598, -6329986, -1737844, 8404198, -10230431, 3193717, 4589731, -5187690, 2099894, 438570, 2928245, -5006156, 2056566, 536871, -2543126, 3759274, -1553903, -3818241, 5990222, -3891236, 1313518, -1100303, -802548, 5764883, -2980589, -2569892, 2219818, 1537273, -2965915, -2792137, 7802951, -8673271, 6972568, -649694, -1595000, -2296086, 4859657, -919245, -5280193, 4036990, 352899, -992580, 18352, -2015977, 2731128, -2029178, 2547512, -2404149, 2115154, -588910, 2031173, -3552703, 1730781, -2570758, 4780162, -6838571, 6455632, -2129128, -2801068, 6217226, -4684038, 1163508, -1634884, 3286328, -2246635, 1323383, -2970799, 5473399, -7895387, 9879583, -9686005, 5668764, -2472687, 4687984, -4678896, 1520009, -2779470, 6562889, -4829190, -3414304, 5324072, -388670, -187007, -1972571, 534425, 1592461]
+
+        freqs = [1.177571, 1.478601, 1.654692, 1.779631, 1.876541, 1.955722, 2.022669, 2.080661, 2.131813, 2.177571, 2.218964, 2.256752, 2.291514, 2.323699, 2.353662, 2.381691, 2.40802, 2.432843, 2.456325, 2.478601, 2.49979, 2.519994, 2.539299, 2.557782, 2.575511, 2.592544, 2.608935, 2.624729, 2.639969, 2.654692, 2.668933, 2.682721, 2.696085, 2.70905, 2.721639, 2.733873, 2.745773, 2.757355, 2.768636, 2.779631, 2.790355, 2.80082, 2.811039, 2.821024, 2.830783, 2.840329, 2.849669, 2.858812, 2.867767, 2.876541, 2.885141, 2.893574, 2.901847, 2.909965, 2.917934, 2.925759, 2.933446, 2.940999, 2.948423, 2.955722, 2.962901, 2.969963, 2.976912, 2.983751, 2.990484, 2.997115, 3.003646, 3.01008, 3.01642, 3.022669, 3.028829, 3.034903, 3.040894, 3.046803, 3.052632, 3.058385, 3.064062, 3.069666, 3.075198, 3.080661, 3.086056, 3.091385, 3.096649, 3.10185, 3.10699, 3.112069, 3.11709, 3.122054, 3.126961, 3.131813, 3.136612, 3.141359, 3.146054, 3.150699, 3.155295, 3.159842, 3.164343, 3.168797, 3.173206, 3.177571, 3.181892, 3.186171, 3.190408, 3.194604, 3.19876, 3.202877, 3.206955, 3.210995, 3.214997, 3.218964, 3.222894, 3.226789, 3.230649, 3.234476, 3.238269, 3.242029, 3.245757, 3.249453, 3.253118, 3.256752, 3.260356, 3.263931, 3.267476, 3.270993, 3.274481, 3.277942, 3.281375, 3.284781, 3.288161, 3.291514, 3.294842, 3.298145, 3.301423, 3.304676, 3.307905, 3.31111, 3.314292, 3.31745, 3.320586, 3.323699, 3.32679, 3.329859, 3.332907, 3.335933, 3.338939, 3.341924, 3.344888, 3.347833, 3.350757, 3.353662, 3.356548, 3.359415, 3.362262, 3.365092, 3.367903, 3.370696, 3.373471, 3.376228, 
+                3.378968, 3.381691, 3.384397, 3.387086, 3.389759, 3.392415, 3.395055, 3.397679, 3.400287, 3.40288, 3.405458, 3.40802, 3.410567, 3.413099, 3.415617, 3.41812, 3.420609, 3.423084, 3.425544, 3.427991, 3.430424, 3.432843, 3.43525, 3.437642, 3.440022, 3.442389, 3.444743, 3.447084, 3.449413, 3.451729, 3.454033, 3.456325, 3.458604, 3.460872, 3.463128, 3.465373, 3.467606, 3.469827, 3.472037, 3.474236, 3.476424, 3.478601, 3.480767, 3.482922, 3.485067, 3.487201, 3.489325, 3.491438, 3.493541, 3.495634, 3.497717, 3.49979, 3.501853, 3.503907, 3.505951, 3.507985, 3.510009, 3.512025, 3.514031, 3.516027, 3.518015, 3.519994, 3.521963, 3.523924, 3.525876, 3.527819, 3.529753, 3.531679, 3.533597, 3.535506, 3.537406, 3.539299, 3.541183, 3.543059, 3.544927, 3.546787, 3.548639, 3.550483, 3.552319, 3.554148, 3.555969, 3.557782, 3.559588, 3.561386, 3.563177, 3.564961, 3.566737, 3.568506, 3.570268, 3.572023, 3.57377, 3.575511, 3.577245, 3.578972, 3.580691, 3.582405, 3.584111, 3.585811, 3.587504, 3.589191, 3.590871, 3.592544, 3.594211, 3.595872, 3.597527, 3.599175, 3.600817, 3.602453, 3.604082, 3.605706, 3.607323, 3.608935, 3.61054, 3.61214, 3.613734, 3.615322, 3.616904, 3.61848, 3.620051, 3.621616, 3.623175, 3.624729, 3.626277, 3.62782, 3.629357, 3.630889, 3.632416, 3.633937, 3.635453, 3.636963, 3.638469, 3.639969, 3.641464, 3.642954, 3.644439, 3.645918, 3.647393, 3.648863, 3.650327, 3.651787, 3.653242, 3.654692, 3.656137, 3.657578, 3.659014, 3.660445, 3.661871, 3.663292, 3.664709, 3.666122, 3.667529, 3.668933, 3.670331, 3.671726, 3.673115, 3.674501, 3.675882, 3.677258, 3.67863, 3.679998, 3.681362, 3.682721, 3.684076, 3.685427, 3.686773, 3.688116, 3.689454, 3.690789, 3.692119, 3.693445, 3.694767, 3.696085, 3.697399, 3.698709, 3.700015, 3.701317, 3.702616, 3.70391, 3.705201, 3.706488, 3.707771, 3.70905, 3.710325, 3.711597, 3.712865, 3.714129, 3.71539, 3.716647, 3.7179, 3.71915, 3.720396, 3.721639, 3.722878, 3.724114, 3.725346, 3.726574, 3.727799, 3.729021, 3.730239, 3.731454, 3.732665, 3.733873, 3.735078, 3.73628, 3.737478, 3.738672, 3.739864, 3.741052, 3.742237, 3.743419, 3.744597, 3.745773, 3.746945, 3.748114, 3.74928, 3.750443, 3.751602, 3.752759, 3.753912, 3.755063, 3.75621, 3.757355, 3.758496, 3.759634, 3.76077, 3.761902, 3.763032, 3.764158, 3.765282, 3.766403, 3.767521, 3.768636, 3.769748, 3.770857, 3.771964, 3.773067, 3.774168, 3.775266, 3.776361, 3.777454, 3.778544, 3.779631, 3.780715, 3.781797, 3.782876, 3.783952, 3.785026, 3.786097, 3.787165, 3.788231, 3.789294, 3.790355, 3.791413, 3.792468, 3.793521, 3.794571, 3.795619, 3.796664, 3.797707, 3.798747, 3.799785, 3.80082, 3.801853, 3.802883, 3.803911, 3.804937, 3.80596, 3.806981, 3.807999, 3.809015, 3.810028, 3.811039, 3.812048, 3.813055, 3.814059, 3.815061, 3.81606, 3.817057, 3.818052, 3.819045, 3.820035, 3.821024, 3.82201, 3.822993, 3.823975, 3.824954, 3.825931, 3.826906, 3.827878, 3.828849, 3.829817, 3.830783, 3.831748, 3.832709, 3.833669, 3.834627, 3.835582, 3.836536, 3.837487, 3.838436, 3.839384, 3.840329, 3.841272, 3.842213, 3.843152, 3.844089, 3.845024, 3.845957, 3.846888, 3.847817, 3.848744, 3.849669, 3.850592, 3.851513, 3.852432, 3.853349, 3.854265, 3.855178, 3.856089, 3.856999, 3.857906, 3.858812, 3.859716, 3.860618, 3.861518, 3.862416, 3.863313, 3.864207, 3.8651, 3.865991, 3.86688, 3.867767, 3.868652, 3.869536, 3.870418, 3.871298, 3.872176, 3.873053, 3.873927, 3.8748, 3.875672, 3.876541, 3.877409, 3.878275, 3.879139, 3.880002, 3.880862, 3.881721, 3.882579, 3.883435, 3.884289, 3.885141, 3.885992, 3.886841, 3.887688, 3.888534, 3.889378, 3.890221, 3.891062, 3.891901, 3.892738, 3.893574, 3.894409, 3.895241, 3.896073, 3.896902, 3.89773, 3.898557, 3.899382, 3.900205, 3.901027, 3.901847, 3.902665, 3.903483, 3.904298, 3.905112, 3.905925, 3.906736, 3.907545, 3.908353, 3.90916, 3.909965, 3.910768, 3.91157, 3.912371, 3.91317, 3.913967, 3.914764, 3.915558, 3.916352, 3.917143, 3.917934, 3.918723, 3.91951, 3.920296, 3.921081, 3.921864, 3.922646, 3.923426, 3.924205, 3.924983, 3.925759, 3.926534, 3.927307, 3.928079, 3.92885, 3.929619, 3.930387, 3.931154, 3.931919, 3.932683, 3.933446, 3.934207, 3.934967, 3.935726, 3.936483, 3.937239, 3.937993, 3.938747, 3.939499, 3.94025, 3.940999, 3.941747, 3.942494, 3.94324, 3.943984, 3.944727, 3.945469, 3.946209, 3.946948, 3.947686, 3.948423, 3.949158, 3.949893, 3.950626, 3.951357, 3.952088, 3.952817, 3.953545, 3.954272, 3.954998, 3.955722, 3.956445, 3.957167, 3.957888, 3.958608, 3.959326, 3.960044, 3.96076, 3.961475, 3.962188, 3.962901, 3.963612, 3.964322, 3.965031, 3.965739, 3.966446, 3.967152, 3.967856, 3.968559, 3.969262, 3.969963, 3.970663, 3.971361, 3.972059, 3.972756, 3.973451, 3.974145, 3.974839, 3.975531, 3.976222, 3.976912, 3.9776, 3.978288, 3.978975, 3.97966, 3.980345, 3.981028, 3.98171, 3.982392, 3.983072, 3.983751, 3.984429, 3.985106, 3.985782, 3.986457, 3.987131, 3.987803, 3.988475, 3.989146, 3.989816, 3.990484, 3.991152, 3.991819, 3.992484, 3.993149, 3.993812, 3.994475, 3.995136, 3.995797, 3.996456, 3.997115, 3.997772, 3.998429, 3.999084, 3.999739, 4.000393, 4.001045, 4.001697, 4.002347, 4.002997, 4.003646, 4.004293, 4.00494, 4.005586, 4.006231, 4.006875, 4.007518, 4.00816, 4.008801, 4.009441, 4.01008, 4.010718, 4.011355, 4.011992, 4.012627, 4.013262, 4.013895, 4.014528, 4.015159, 4.01579, 4.01642, 4.017049, 4.017677, 4.018304, 4.01893, 4.019556, 4.02018, 4.020804, 4.021426, 4.022048, 4.022669, 4.023289, 4.023908, 4.024526, 4.025144, 4.02576, 4.026376, 4.02699, 4.027604, 4.028217, 4.028829, 4.029441, 4.030051, 4.03066, 4.031269, 4.031877, 4.032484, 4.03309, 4.033695, 4.0343, 4.034903, 4.035506, 4.036108, 4.036709, 4.03731, 4.037909, 4.038508, 4.039105, 4.039702, 4.040298, 4.040894, 4.041488, 4.042082, 4.042675, 4.043267, 4.043858, 4.044449, 4.045038, 4.045627, 4.046215, 4.046803, 4.047389, 4.047975, 4.04856, 4.049144, 4.049727, 4.05031, 4.050892, 4.051473, 4.052053, 4.052632, 4.053211, 4.053789, 4.054366, 4.054942, 4.055518, 4.056093, 4.056667, 4.05724, 4.057813, 4.058385, 4.058956, 4.059526, 4.060096, 4.060664, 4.061232, 4.0618, 4.062366, 4.062932, 4.063497, 
+                4.064062, 4.064625, 4.065188, 4.06575, 4.066312, 4.066873, 4.067433, 4.067992, 4.068551, 4.069108, 4.069666, 4.070222, 4.070778, 4.071333, 4.071887, 4.072441, 4.072994, 4.073546, 4.074097, 4.074648, 4.075198, 4.075747, 4.076296, 4.076844, 4.077391, 4.077938, 4.078484, 4.079029, 4.079574, 4.080118, 4.080661, 4.081203, 4.081745, 4.082287, 4.082827, 4.083367, 4.083906, 4.084445, 4.084982, 4.085519, 4.086056, 4.086592, 4.087127, 4.087662, 4.088195, 4.088729, 4.089261, 4.089793, 4.090324, 4.090855, 4.091385, 4.091914, 4.092443, 4.092971, 4.093498, 4.094025, 4.094551, 4.095076, 4.095601, 4.096125, 4.096649, 4.097172, 4.097694, 4.098216, 4.098737, 4.099257, 4.099777, 4.100296, 4.100815, 4.101333, 4.10185, 4.102367, 4.102883, 4.103399, 4.103913, 4.104428, 4.104941, 4.105454, 4.105967, 4.106479, 4.10699, 4.107501, 4.108011, 4.10852, 4.109029, 4.109537, 4.110045, 4.110552, 4.111058, 4.111564, 
+                4.112069, 4.112574, 4.113078, 4.113582, 4.114085, 4.114587, 4.115089, 4.11559, 4.116091, 4.116591, 4.11709, 4.117589, 4.118087, 4.118585, 4.119082, 4.119579, 4.120075, 4.120571, 4.121065, 4.12156, 4.122054, 4.122547, 4.12304, 4.123532, 4.124023, 4.124514, 4.125005, 4.125495, 4.125984, 4.126473, 4.126961, 4.127449, 4.127936, 4.128422, 4.128908, 4.129394, 4.129879, 4.130363, 4.130847, 4.131331, 4.131813, 4.132296, 4.132778, 4.133259, 4.133739, 4.13422, 4.134699, 4.135178, 4.135657, 4.136135, 4.136612, 4.137089, 4.137566, 4.138042, 4.138517, 4.138992, 4.139466, 4.13994, 4.140414, 4.140886, 4.141359, 4.141831, 4.142302, 4.142773, 4.143243, 4.143713, 4.144182, 4.144651, 4.145119, 4.145587, 4.146054, 4.146521, 4.146987, 4.147453, 4.147918, 4.148383, 4.148847, 4.149311, 4.149774, 4.150237, 4.150699, 4.151161, 4.151622, 4.152083, 4.152543, 4.153003, 4.153462, 4.153921, 4.154379, 4.154837, 4.155295, 4.155751, 4.156208, 4.156664, 4.157119, 4.157574, 4.158029, 4.158483, 4.158936, 4.15939, 4.159842, 4.160294, 4.160746, 4.161197, 4.161648, 4.162098, 4.162548, 4.162997, 4.163446, 4.163895, 4.164343, 4.16479, 4.165237, 4.165684, 4.16613, 4.166576, 4.167021, 4.167466, 4.16791, 4.168354, 4.168797, 4.16924, 4.169682, 4.170124, 4.170566, 4.171007, 4.171448, 4.171888, 4.172328, 4.172767, 4.173206, 4.173645, 4.174083, 4.17452, 4.174957, 4.175394, 4.17583, 4.176266, 4.176702, 4.177136, 4.177571, 4.178005, 4.178439, 4.178872, 4.179305, 4.179737, 4.180169, 4.1806, 4.181032, 4.181462, 4.181892, 4.182322, 4.182751, 4.18318, 4.183609, 4.184037, 4.184465, 4.184892, 4.185319, 4.185745, 4.186171, 4.186597, 4.187022, 4.187447, 4.187871, 4.188295, 4.188718, 4.189141, 4.189564, 4.189986, 4.190408, 4.19083, 4.191251, 4.191671, 4.192092, 4.192511, 4.192931, 4.19335, 4.193768, 4.194187, 4.194604, 
+                4.195022, 4.195439, 4.195855, 4.196271, 4.196687, 4.197103, 4.197518, 4.197932, 4.198346, 4.19876, 4.199174, 4.199587, 4.199999, 4.200412, 4.200823, 4.201235, 4.201646, 4.202057, 4.202467, 4.202877, 4.203286, 4.203695, 4.204104, 4.204513, 4.204921, 4.205328, 4.205735, 4.206142, 4.206549, 4.206955, 4.20736, 4.207766, 4.208171, 4.208575, 4.208979, 4.209383, 4.209787, 4.21019, 4.210592, 4.210995, 4.211397, 4.211798, 4.212199, 4.2126, 4.213001, 4.213401, 4.213801, 4.2142, 4.214599, 4.214997, 4.215396, 4.215794, 4.216191, 4.216588, 4.216985, 4.217382, 4.217778, 4.218173, 4.218569, 4.218964, 4.219358, 4.219753, 4.220146, 4.22054, 4.220933, 4.221326, 4.221719, 4.222111, 
+                4.222503, 4.222894, 4.223285, 4.223676, 4.224066, 4.224456, 4.224846, 4.225235, 4.225624, 4.226013, 4.226401, 4.226789, 4.227177, 4.227564, 4.227951, 4.228337, 4.228723, 4.229109, 4.229495, 4.22988, 4.230265, 4.230649, 4.231034, 4.231417, 4.231801, 4.232184, 4.232567, 4.232949, 4.233331, 4.233713, 4.234095, 4.234476, 4.234857, 4.235237, 4.235617, 4.235997, 4.236376, 4.236756, 4.237134, 4.237513, 4.237891, 4.238269, 4.238646, 4.239023, 4.2394, 4.239777, 4.240153, 4.240529, 4.240904, 4.24128, 4.241654, 4.242029, 4.242403, 4.242777, 4.243151, 4.243524, 4.243897, 4.24427, 4.244642, 4.245014, 4.245385, 4.245757, 4.246128, 4.246499, 4.246869, 4.247239, 4.247609, 4.247978, 4.248347, 4.248716, 4.249085, 4.249453, 4.249821, 4.250188, 4.250556, 4.250923, 4.251289, 4.251656, 4.252022, 4.252387, 4.252753, 4.253118, 4.253483, 4.253847, 4.254211, 4.254575, 4.254939, 4.255302, 4.255665, 4.256028, 4.25639, 4.256752, 4.257114, 4.257475, 4.257837, 4.258197, 4.258558, 4.258918, 4.259278, 4.259638, 4.259997, 4.260356, 4.260715, 4.261074, 4.261432, 4.26179, 4.262147, 4.262505, 4.262862, 4.263218, 4.263575, 4.263931, 4.264287, 4.264642, 4.264997, 4.265352, 4.265707, 4.266061, 4.266416, 4.266769, 4.267123, 4.267476, 4.267829, 4.268182, 4.268534, 4.268886, 4.269238, 4.269589, 4.269941, 4.270292, 4.270642, 4.270993, 4.271343, 4.271693, 4.272042, 4.272391, 4.27274, 4.273089, 4.273437, 4.273786, 4.274133, 4.274481, 4.274828, 4.275175, 4.275522, 4.275869, 4.276215, 4.276561, 4.276906, 4.277252, 4.277597, 4.277942, 4.278286, 4.27863, 4.278974, 4.279318, 4.279661, 4.280005, 4.280348, 4.28069, 4.281033, 4.281375, 4.281717, 4.282058, 4.282399, 4.28274, 4.283081, 4.283422, 4.283762, 4.284102, 4.284442, 4.284781, 4.28512, 4.285459, 4.285798, 4.286136, 4.286474, 4.286812, 4.28715, 4.287487, 4.287824, 4.288161, 4.288497, 4.288833, 4.289169, 4.289505, 4.289841, 4.290176, 4.290511, 4.290846, 4.29118, 4.291514, 4.291848, 4.292182, 4.292515, 4.292849, 4.293181, 4.293514, 4.293847, 4.294179, 4.294511, 4.294842, 4.295174, 
+                4.295505, 4.295836, 4.296166, 4.296497, 4.296827, 4.297157, 4.297486, 4.297816, 4.298145, 4.298474, 4.298802, 4.299131, 4.299459, 4.299787, 4.300114, 4.300442, 4.300769, 4.301096, 4.301423, 4.301749, 4.302075, 4.302401, 4.302727, 4.303052, 4.303377, 4.303702, 4.304027, 4.304352, 4.304676, 4.305, 4.305323, 4.305647, 4.30597, 4.306293, 4.306616, 4.306939, 4.307261, 4.307583, 4.307905, 4.308226, 4.308548, 4.308869, 4.30919, 4.30951, 4.309831, 4.310151, 4.310471, 4.31079, 4.31111, 4.311429, 4.311748, 4.312067, 4.312385, 4.312704, 4.313022, 4.313339, 4.313657, 4.313974, 4.314292, 4.314608, 4.314925, 4.315242, 4.315558, 4.315874, 4.316189, 4.316505, 4.31682, 4.317135, 4.31745, 4.317765, 4.318079, 4.318393, 4.318707, 4.319021, 4.319334, 4.319647, 4.31996, 4.320273, 4.320586, 4.320898, 4.32121, 4.321522, 4.321834, 4.322145, 4.322456, 4.322767, 4.323078, 4.323389, 4.323699, 4.324009, 4.324319, 4.324629, 4.324938, 4.325247, 4.325556, 4.325865, 4.326174, 4.326482, 4.32679, 4.327098, 4.327406, 4.327713, 4.32802, 4.328327, 4.328634, 4.328941, 4.329247, 4.329553, 4.329859, 4.330165, 4.330471, 4.330776, 4.331081, 4.331386, 4.33169, 4.331995, 4.332299, 4.332603, 4.332907, 4.333211, 4.333514, 4.333817, 4.33412, 4.334423, 4.334725, 4.335028, 4.33533, 4.335632, 4.335933, 4.336235, 4.336536, 4.336837, 4.337138, 4.337439, 4.337739, 4.33804, 4.33834, 4.338639, 4.338939, 4.339238, 4.339538, 4.339837, 4.340135, 4.340434, 4.340732, 4.341031, 4.341328, 4.341626, 4.341924, 4.342221, 4.342518, 4.342815, 4.343112, 4.343409]
+
+        if settings.wave:
+            settings.separation = 0
+            settings.width = 1
+        if settings.position == "Left" or settings.position == "Right":
+            num_bars = settings.size[1] // (settings.width + settings.separation)
+        else:
+            num_bars = settings.size[0] // (settings.width + settings.separation)
+        if num_bars >= settings.size[0]:
+            num_bars = settings.size[0] - 1
+
+        if len(settings.background) == 6:
+                settings.background = cv2.cvtColor(np.array(Image.new(mode="RGB", size=(settings.size[0], settings.size[1]), color=ImageColor.getrgb(f"#{settings.background}"))), cv2.COLOR_RGB2BGR)
+        if type(settings.background) == str:
+            if settings.background[-4:] in (".mp4",".avi",".mov",".MOV"):
+                vid = cv2.VideoCapture(settings.background)
+                success, image = vid.read()
+                if not success:
+                    return
+                settings.background = cv2.resize(image, (settings.size[0], settings.size[1]))
+            else:
+                settings.background = cv2.resize(cv2.imread(settings.background), (settings.size[0], settings.size[1]))
+        
+        heights = [0] * num_bars
+        heights = F.bins(freqs, amps, heights, num_bars, settings)
+        args = (settings.background, num_bars, heights, 0, settings)
+        max_height = max(args[2])
+        average_heights = args[3] / 20000000 + 1
+        average_lows = np.mean(args[2][0:4 * num_bars // 100]) * (settings.size[1] // 5) // max_height
+        args = (settings.background, num_bars, args[2] * (settings.size[1] // 5) // max_height, (average_heights, average_lows), settings)
+
+        img = pick_react(args)
+
+        if settings.AISS:
+            sr = cv2.dnn_superres.DnnSuperResImpl_create()
+            try:
+                path = F.find_by_relative_path(r"assets/ESPCN_x2.pb")
+            except Exception as e:
+                raise e
+            sr.readModel(path)
+            sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+            sr.setModel("espcn", 2)
+            img = sr.upsample(img)
+        cv2.imshow("Preview", img)
+        cv2.waitKey(0)
+
+    def continue_to_video_settings(e):
+        global prev_page
+        global curr_page
+        if access_widgets["react_type"].value == "Bars":
+            if access_widgets["bar_pos"].value == "" or access_widgets["bar_pos"].value == None:
+                return
+            if access_widgets["width"].value == "" or access_widgets["separation"].value == "":
+                return
+            try:
+                int(access_widgets["width"].value)
+                int(access_widgets["separation"].value)
+            except ValueError:
+                return
+        prev_page = curr_page
+        curr_page = "video_settings"
+        if access_widgets.get("hex_color", None) is None or access_widgets["hex_color"].value == "":
+            return
+        if access_widgets["react_type"].value == "Bars":
+            config["width"] = int(access_widgets["width"].value)
+            config["separation"] = int(access_widgets["separation"].value)
+        else:
+            config["width"] = 1
+            config["separation"] = 0
+        config["position"] = access_widgets["bar_pos"].value
+        config["wave"] = access_widgets["react_type"].value == "Waveform"
+        config["color"] = ImageColor.getrgb(f"#{access_widgets['hex_color'].value.strip(' #')[0:6]}")
+        config["zoom"] = access_widgets["zoom_checkbox"].value
+        config["snowfall"] = access_widgets["snowfall_checkbox"].value
+        
         page.clean()
 
         page.add(ft.Text("Video Settings", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.Container(height=10))
-        frame_rate = ft.TextField(label="Frame Rate", width=150, height=60)
-        vid_length = ft.TextField(label="Video Length (seconds)", width=150, height=60)
+        frame_rate = ft.TextField(label="Frame Rate", value=30, width=150, height=60)
+        vid_length = ft.TextField(label="Length (seconds) (-1 for Max)", value=-1, width=150, height=60)
         vid_res = ft.Dropdown(options=[ft.dropdown.Option("720p"), ft.dropdown.Option("1080p"), ft.dropdown.Option("1440p"), ft.dropdown.Option("4K")], label="Video Resolution", width=150, height=60)
         access_widgets["frame_rate"] = frame_rate
         access_widgets["vid_length"] = vid_length
         access_widgets["vid_res"] = vid_res
 
-        circular_vid = ft.Checkbox(label="Circular Looped Video", value=False, width=150, height=50)
+        circular_vid = ft.Checkbox(label="Circular Looped Video", value=True, width=150, height=50)
         AISS = ft.Checkbox(label="AI Supersampling", value=False, width=150, height=50)
         page.add(ft.Column([
             ft.Row([frame_rate, vid_length, vid_res], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
@@ -138,13 +427,23 @@ def main(page: ft.Page):
         access_widgets["circular_vid"] = circular_vid
         access_widgets["AISS"] = AISS
 
+        page.add(ft.ElevatedButton("Preview", on_click=preview_render))
+
         page.add(ft.Container(height=10))
 
         page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_react_config), ft.ElevatedButton("Render", on_click=continue_to_render)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_render(e):
+        global prev_page
+        global curr_page
+        if access_widgets["frame_rate"].value == "" or access_widgets["vid_length"].value == "" or access_widgets["vid_res"].value == "":
+            return
+        prev_page = curr_page
+        curr_page = "render"
         config["frame_rate"] = int(access_widgets["frame_rate"].value)
         config["length"] = int(access_widgets["vid_length"].value)
+        if config["length"] <= -1:
+            config["length"] = 10000000
         if access_widgets["vid_res"].value == "720p":
             config["size"] = [1280, 720]
         elif access_widgets["vid_res"].value == "1080p":
