@@ -182,7 +182,7 @@ def render(config: dict, progress, main):
                     (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
         progress_counter = 0
         with Pool(processes=min(5, max(1, os.cpu_count() // 2)), maxtasksperchild=120) as pool:
-            outputs = pool.imap(pick_react, args)
+            outputs = pool.map(pick_react, args)
             sr = None
             if settings.AISS:
                 sr = cv2.dnn_superres.DnnSuperResImpl_create()
@@ -193,8 +193,9 @@ def render(config: dict, progress, main):
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
-            for frame in outputs:
-                frame = F.decode_jpg_to_img(frame)
+        with Pool(processes=2) as pool:
+            frames = pool.imap(F.decode_jpg_to_img, outputs)
+            for frame in frames:
                 if settings.AISS:
                     frame = sr.upsample(frame)
                 result.write(frame)
