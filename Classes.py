@@ -34,7 +34,7 @@ class Main_Spoof:
 @define
 class Frame_Information:
     video: bool = field(validator=validators.instance_of(bool))
-    shared_name: str = field(validator=validators.instance_of(str))
+    shared_name = field()
     shared_memory_size: int = field()
     frame_number: int = field(validator=validators.instance_of(int))
 

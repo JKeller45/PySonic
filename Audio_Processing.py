@@ -111,19 +111,19 @@ def render(config: dict, progress, main):
         vid_length = 30 * 5
         while success and count <= vid_length:
             if settings.frame_rate < fps:
-                background.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_CUBIC))
+                background.append(F.compress_img_to_jpg(cv2.resize(image, settings.size, interpolation=cv2.INTER_CUBIC)))
                 for _ in range(round(fps / settings.frame_rate)):
                     success, image = vid.read()
             elif settings.frame_rate >= fps:
                 for _ in range(round(settings.frame_rate / fps)):
-                    background.append(cv2.resize(image, settings.size, interpolation=cv2.INTER_CUBIC))
+                    background.append(F.compress_img_to_jpg(cv2.resize(image, settings.size, interpolation=cv2.INTER_CUBIC)))
                 success, image = vid.read()
+            background[-1] = background[-1] + b'\xff'
             backgrounds.append(count - 1)
             count += 1
         if settings.circular_looped_video:
             background = background + background[::-1]
             backgrounds = backgrounds + backgrounds[::-1]
-        background = np.array(background, dtype=np.uint8)
         backgrounds = cycle(backgrounds)
     elif type(settings.background) == str:
         background = cv2.imread(settings.background)
@@ -168,14 +168,20 @@ def render(config: dict, progress, main):
     average_heights = np.cumsum(average_heights)
 
     with SharedMemoryManager() as smm:
-        frame_bg = smm.SharedMemory(size=background.nbytes)
-        shared_background = np.ndarray(background.shape, dtype=np.uint8, buffer=frame_bg.buf)
-        shared_background[:] = background[:]
-        del background
-        progress_counter = 0
-        args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
+        if type(background) != list:
+            frame_bg = smm.SharedMemory(size=background.nbytes)
+            shared_background = np.ndarray(background.shape, dtype=background.dtype, buffer=frame_bg.buf)
+            shared_background[:] = background[:]
+            del background
+            args = [(Frame_Information(arg[0].video, frame_bg.name, shared_background.size, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
                     (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
-        with Pool(processes=min(5, max(1, os.cpu_count() // 2)), maxtasksperchild=30) as pool:
+        else:
+            frame_bg = smm.ShareableList(background)
+            del background
+            args = [(Frame_Information(arg[0].video, frame_bg, 0, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
+                    (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
+        progress_counter = 0
+        with Pool(processes=min(5, max(1, os.cpu_count() // 2)), maxtasksperchild=120) as pool:
             outputs = pool.imap(pick_react, args)
             sr = None
             if settings.AISS:
@@ -188,6 +194,7 @@ def render(config: dict, progress, main):
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
             for frame in outputs:
+                frame = F.decode_jpg_to_img(frame)
                 if settings.AISS:
                     frame = sr.upsample(frame)
                 result.write(frame)

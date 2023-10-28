@@ -65,19 +65,19 @@ def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heig
     background (np.ndarray): the final frame with all bars drawn over its
     """
     if type(background) == Frame_Information:
-        existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
-        shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
-        if background.video:
-            shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
-        else:
+        if not background.video:
+            existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
+            shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
             shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
-        new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
-        if background.video:
-            new_bg[:] = shared_bg[background.frame_number][:]
-        else:
+            new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
             new_bg[:] = shared_bg[:]
+            existing_shm.close()
+        else:
+            existing_shm = background.shared_name
+            new_bg = existing_shm[background.frame_number][:-1]
+            new_bg = decode_jpg_to_img(new_bg)
         background = new_bg
-        existing_shm.close()
+        shared_bg = None
 
     offset = settings.separation // 2 
     if settings.zoom:
@@ -98,7 +98,7 @@ def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heig
         snow_matrix = generate_snowfall_matrix(cummulative_avg_heights[0], -45, settings)
         background = create_snowfall(background, snow_matrix, settings.color)
 
-    return background
+    return compress_img_to_jpg(background)
 
 def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_bars: int, settings: Settings) -> npt.ArrayLike:
     """
@@ -164,18 +164,19 @@ def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
     settings (Settings): the settings dataclass that contains the render settings
     """
     if type(background) == Frame_Information:
-        existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
-        shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
-        if background.video:
-            shared_bg = shared_bg.reshape((shared_bg.shape[0] // (settings.size[1] * settings.size[0] * 3), settings.size[1], settings.size[0], 3))
-        else:
+        if not background.video:
+            existing_shm = shared_memory.SharedMemory(name=str(background.shared_name))
+            shared_bg = np.ndarray(background.shared_memory_size, dtype=np.uint8, buffer=existing_shm.buf)
             shared_bg = shared_bg.reshape((settings.size[1], settings.size[0], 3))
-        new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
-        if background.video:
-            new_bg[:] = shared_bg[background.frame_number][:]
-        else:
+            new_bg = np.zeros((settings.size[1], settings.size[0], 3), dtype=np.uint8)
             new_bg[:] = shared_bg[:]
+            existing_shm.close()
+        else:
+            existing_shm = background.shared_name
+            new_bg = existing_shm[background.frame_number][:-1]
+            new_bg = decode_jpg_to_img(new_bg)
         background = new_bg
+        shared_bg = None
 
     if settings.zoom:
         background = zoom_effect(background, cummulative_avg_heights[1])
@@ -205,7 +206,7 @@ def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
         snow_matrix = generate_snowfall_matrix(cummulative_avg_heights[0], -45, settings)
         background = create_snowfall(background, snow_matrix, settings.color)
 
-    return background
+    return compress_img_to_jpg(background)
 
 def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: Settings, height: int, last_coord: tuple[int, int]) -> tuple[int, int]:
     """
@@ -394,3 +395,33 @@ def rgb_to_hsv(r: int, g: int, b: int) -> tuple[float, float, float]:
     saturation = 0 if cmax == 0 else delta / cmax
     value = cmax
     return hue, saturation, value
+
+def compress_img_to_jpg(img: npt.ArrayLike):
+    """
+    Compresses an image to a JPG file.
+
+    Parameters
+    ----------
+    img (numpy.ndarray): The image to compress.
+
+    Returns
+    -------
+    bytes: The compressed image as a BytesIO object.
+    """
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = cv2.imencode('.jpg', img)[1]
+    return np.array(img).tobytes()
+
+def decode_jpg_to_img(img: bytes) -> npt.ArrayLike:
+    """
+    Decodes a JPG file to an image.
+
+    Parameters
+    ----------
+    img (bytes): The image to decode.
+
+    Returns
+    -------
+    numpy.ndarray: The decoded image.
+    """
+    return cv2.cvtColor(cv2.imdecode(np.frombuffer(img, np.uint8), cv2.IMREAD_COLOR), cv2.COLOR_RGB2BGR)
