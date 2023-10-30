@@ -181,8 +181,8 @@ def render(config: dict, progress, main):
             args = [(Frame_Information(arg[0].video, frame_bg, 0, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
                     (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
         progress_counter = 0
+        frames_written = 0
         with Pool(processes=min(5, max(1, os.cpu_count() // 2)), maxtasksperchild=120) as pool:
-            outputs = pool.map(pick_react, args)
             sr = None
             if settings.AISS:
                 sr = cv2.dnn_superres.DnnSuperResImpl_create()
@@ -193,18 +193,19 @@ def render(config: dict, progress, main):
                 sr.readModel(path)
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
-        with Pool(processes=2) as pool:
-            frames = pool.imap(F.decode_jpg_to_img, outputs)
-            for frame in frames:
-                if settings.AISS:
-                    frame = sr.upsample(frame)
-                result.write(frame)
-                progress_counter += 1
-                if progress_counter / length_in_frames >= .01:
-                    progress_counter = 0
-                    progress.value += .01
-                    main.update()
-                del frame
+            while frames_written < length_in_frames:
+                frames = pool.imap(pick_react, args[:min(600, length_in_frames-frames_written)])
+                args = args[:min(600, length_in_frames-frames_written)]
+                for frame in frames:
+                    if settings.AISS:
+                        frame = sr.upsample(frame)
+                    result.write(frame)
+                    frames_written += 1
+                    progress_counter += 1
+                    if progress_counter / length_in_frames >= .01:
+                        progress_counter = 0
+                        progress.value += .01
+                        main.update()
             del sr
     result.release()
 

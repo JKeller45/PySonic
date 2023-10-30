@@ -98,7 +98,7 @@ def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heig
         snow_matrix = generate_snowfall_matrix(cummulative_avg_heights[0], -45, settings)
         background = create_snowfall(background, snow_matrix, settings.color)
 
-    return compress_img_to_jpg(background)
+    return background
 
 def bins(freq: npt.ArrayLike, amp: npt.ArrayLike, heights: npt.ArrayLike, num_bars: int, settings: Settings) -> npt.ArrayLike:
     """
@@ -206,7 +206,7 @@ def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
         snow_matrix = generate_snowfall_matrix(cummulative_avg_heights[0], -45, settings)
         background = create_snowfall(background, snow_matrix, settings.color)
 
-    return compress_img_to_jpg(background)
+    return background
 
 def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: Settings, height: int, last_coord: tuple[int, int]) -> tuple[int, int]:
     """
