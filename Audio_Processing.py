@@ -51,7 +51,7 @@ def render(config: dict, progress, main):
     
     settings.color = settings.color[::-1]
 
-    progress.value = .01
+    progress.value = 0.01
     main.update()
     warnings.simplefilter("ignore", np.ComplexWarning)
     non_wave_input = False
@@ -167,6 +167,9 @@ def render(config: dict, progress, main):
     average_lows = signal.savgol_filter(average_lows, 17, 7)
     average_heights = np.cumsum(average_heights)
 
+    progress.value = 0.1
+    main.update()
+
     with SharedMemoryManager() as smm:
         if type(background) != list:
             frame_bg = smm.SharedMemory(size=background.nbytes)
@@ -180,7 +183,6 @@ def render(config: dict, progress, main):
             del background
             args = [(Frame_Information(arg[0].video, frame_bg, 0, arg[0].frame_number), arg[1], arg[2] * (settings.size[1] // 5) // max_height, 
                     (average_heights[index], average_lows[index]), arg[4]) for index,arg in enumerate(args)]
-        progress_counter = 0
         frames_written = 0
         with Pool(processes=min(5, max(1, os.cpu_count() // 2)), maxtasksperchild=120) as pool:
             sr = None
@@ -194,23 +196,18 @@ def render(config: dict, progress, main):
                 sr.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
                 sr.setModel("espcn", 2)
             while frames_written < length_in_frames:
-                frames = pool.imap(pick_react, args[:min(600, length_in_frames-frames_written)])
-                args = args[:min(600, length_in_frames-frames_written)]
+                batch_size = min(600, length_in_frames-frames_written)
+                frames = pool.imap(pick_react, args[:batch_size])
+                args = args[:batch_size]
                 for frame in frames:
                     if settings.AISS:
                         frame = sr.upsample(frame)
                     result.write(frame)
                     frames_written += 1
-                    progress_counter += 1
-                    if progress_counter / length_in_frames >= .01:
-                        progress_counter = 0
-                        progress.value += .01
-                        main.update()
+                progress.value += batch_size / length_in_frames * .79
+                main.update()
             del sr
     result.release()
-
-    progress.value = .99
-    main.update()
 
     combine_cmds = ["ffmpeg","-y", "-i", f'{settings.output}{file_name}.mp4', '-i', settings.audio_file, '-map', '0', '-map', '1:a', '-c:v', 'copy', '-shortest', f"{settings.output}{file_name}_Audio.mp4"]
 
