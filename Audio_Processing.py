@@ -108,7 +108,7 @@ def render(config: dict, progress, main):
         success, image = vid.read()
         fps = vid.get(cv2.CAP_PROP_FPS)
         count = 1
-        vid_length = 30 * 5
+        vid_length = 900
         while success and count <= vid_length:
             if settings.frame_rate < fps:
                 background.append(F.compress_img_to_jpg(cv2.resize(image, settings.size, interpolation=cv2.INTER_CUBIC)))
