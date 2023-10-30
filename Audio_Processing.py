@@ -224,6 +224,8 @@ def render(config: dict, progress, main):
     progress.value = 1
     main.update()
 
+    del config["background"]
+
 if __name__ == "__main__":
     with open("config.toml", "rb") as f:
         config = tl.load(f)
