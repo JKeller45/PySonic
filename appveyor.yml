@@ -8,7 +8,7 @@ stack: python 3.11
 
 environment:
   GITHUB_TOKEN:
-    secure: KOG9MoWPAWH+GRAHwNL8c3b1NgNIJqJd9Y90XLT7ATX+5Od8DOwEDw1pHrYY1mUZ
+    secure: jrwI3CDXhgWLBgz1sBa5+t/PbZkK+gBrCNO2SScC+kU7KxgHIMLlvsq16wpFwTwU
 
 #
 #   Windows package
