@@ -47,6 +47,8 @@ def draw_rect(output_image: npt.ArrayLike, xcoord: int, ycoord: int, settings: S
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord + height), settings.color, -1)
     elif settings.position == "Bottom":
         output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord - height), settings.color, -1)
+    elif settings.position == "Center":
+        output_image = cv2.rectangle(output_image, (xcoord, ycoord), (xcoord + settings.width, ycoord - height), settings.color, -1)
     return output_image
 
 def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heights: npt.ArrayLike, cummulative_avg_heights: tuple[float, float], settings: Settings) -> npt.ArrayLike:
@@ -92,6 +94,8 @@ def draw_bars(background: Frame_Information | npt.ArrayLike, num_bars: int, heig
             draw_rect(background, 0, offset, settings, heights[i] + 1)
         elif settings.position == "Bottom":
             draw_rect(background, offset, settings.size[1] - 1, settings, heights[i] + 1)
+        elif settings.position == "Center":
+            draw_rect(background, offset, settings.size[1] // 2 + (heights[i] // 2 + 1), settings, heights[i] + 1)
         offset += (settings.width + settings.separation)
 
     if settings.snowfall:
@@ -190,6 +194,8 @@ def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
         last_coord = (0, int(offset + (heights[1] + 1)))
     elif settings.position == "Bottom":
         last_coord = (offset, int((settings.size[1] - 1) - (heights[1] + 1)))
+    elif settings.position == "Center":
+        last_coord = ((offset, int((settings.size[1] // 2) - (heights[1] + 1))))
 
     for i in range(num_bars):
         if settings.position == "Right":
@@ -200,6 +206,8 @@ def draw_wave(background: Frame_Information, num_bars: int, heights: npt.ArrayLi
             last_coord = draw_wave_segment(background, 0, offset, settings, heights[i] + 1, last_coord)
         elif settings.position == "Bottom":
             last_coord = draw_wave_segment(background, offset, settings.size[1] - 1, settings, heights[i] + 1, last_coord)
+        elif settings.position == "Center":
+            last_coord = draw_wave_segment(background, offset, settings.size[1] // 2, settings, heights[i] + 1, last_coord)
         offset += (settings.width + settings.separation)
 
     if settings.snowfall:
@@ -235,6 +243,9 @@ def draw_wave_segment(output_image: npt.ArrayLike, xcoord: int, ycoord: int, set
         output_image = cv2.line(output_image, last_coord, (xcoord + settings.width, ycoord + height), settings.color, 2)
         last_coord = (xcoord + settings.width, ycoord + height)
     elif settings.position == "Bottom":
+        output_image = cv2.line(output_image, last_coord, (xcoord + settings.width, ycoord - height), settings.color, 2)
+        last_coord = (xcoord + settings.width, ycoord - height)
+    elif settings.position == "Center":
         output_image = cv2.line(output_image, last_coord, (xcoord + settings.width, ycoord - height), settings.color, 2)
         last_coord = (xcoord + settings.width, ycoord - height)
     return last_coord

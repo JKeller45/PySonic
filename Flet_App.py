@@ -241,7 +241,7 @@ def main(page: ft.Page):
         if access_widgets.get("bar_pos") is not None:
             bar_pos = access_widgets["bar_pos"]
         else:
-            bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right")], label="React Position", width=150, height=60)
+            bar_pos = ft.Dropdown(options=[ft.dropdown.Option("Top"), ft.dropdown.Option("Bottom"), ft.dropdown.Option("Left"), ft.dropdown.Option("Right"), ft.dropdown.Option("Center")], label="React Position", width=150, height=60)
         access_widgets["bar_pos"] = bar_pos
 
         if access_widgets["react_type"].value == "Bars":
