@@ -8,11 +8,28 @@ from PIL import ImageColor
 from Classes import Settings
 import Functions as F
 from Audio_Processing import pick_react
+from Classes import Settings, thread_with_exception
+import sys
+from copy import deepcopy
 
 config = {}
 access_widgets = {}
 prev_page = "start"
 curr_page = "start"
+thread = None
+pools = []
+render_queue = []
+
+def on_close(e):
+    global thread
+    global pools
+    print("closing")
+    for pool in pools:
+        pool.terminate()
+        pool.join()
+    if isinstance(thread, thread_with_exception):
+        thread.raise_exception()
+    sys.exit()
 
 def main(page: ft.Page):
     global config
@@ -431,15 +448,15 @@ def main(page: ft.Page):
 
         page.add(ft.Container(height=10))
 
-        page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_react_config), ft.ElevatedButton("Render", on_click=continue_to_render)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
+        page.add(ft.Row([ft.ElevatedButton("Back", on_click=continue_to_react_config), ft.ElevatedButton("Add to Queue", on_click=add_to_queue), ft.ElevatedButton("Render", on_click=continue_to_render)], alignment=ft.MainAxisAlignment.CENTER, spacing=20))
 
     def continue_to_render(e):
         global prev_page
         global curr_page
+        global config
+
         if access_widgets["frame_rate"].value == "" or access_widgets["vid_length"].value == "" or access_widgets["vid_res"].value == "":
             return
-        prev_page = curr_page
-        curr_page = "render"
         config["frame_rate"] = int(access_widgets["frame_rate"].value)
         config["length"] = int(access_widgets["vid_length"].value)
         if config["length"] <= -1:
@@ -458,19 +475,47 @@ def main(page: ft.Page):
         if len(config["background"]) == 6:
             config["background"] = cv2.cvtColor(np.array(Image.new(mode="RGB", size=(config["size"][0], config["size"][1]), color=ImageColor.getrgb(f"#{config['background']}"))), cv2.COLOR_RGB2BGR)
 
+        render_queue.append(deepcopy(config))
+
+        for settings in render_queue:
+            page.clean()
+            page.add(ft.Text("Render In Progress...", size=25, weight=ft.FontWeight.BOLD))
+            page.add(ft.Container(height=10))
+            progress_bar = ft.ProgressBar(width=500, height=25)
+            progress_bar.value = 0
+            page.add(progress_bar)
+
+            render(settings, progress_bar, page)
+
         page.clean()
-
-        page.add(ft.Text("Render In Progress...", size=25, weight=ft.FontWeight.BOLD))
-        page.add(ft.Container(height=10))
-        progress_bar = ft.ProgressBar(width=500, height=25)
-        progress_bar.value = 0
-        page.add(progress_bar)
-
-        render(config, progress_bar, page)
-
-        page.clean()
-        page.add(ft.Text("Render Complete!", size=25, weight=ft.FontWeight.BOLD))
+        page.add(ft.Text("Renders Complete!", size=25, weight=ft.FontWeight.BOLD))
         page.add(ft.ElevatedButton("Render Again", on_click=continue_to_files))
+
+    def add_to_queue(e):
+        global render_queue
+        global config
+        if access_widgets["frame_rate"].value == "" or access_widgets["vid_length"].value == "" or access_widgets["vid_res"].value == "":
+            return
+        config["frame_rate"] = int(access_widgets["frame_rate"].value)
+        config["length"] = int(access_widgets["vid_length"].value)
+        if config["length"] <= -1:
+            config["length"] = 10000000
+        if access_widgets["vid_res"].value == "720p":
+            config["size"] = [1280, 720]
+        elif access_widgets["vid_res"].value == "1080p":
+            config["size"] = [1920, 1080]
+        elif access_widgets["vid_res"].value == "1440p":
+            config["size"] = [2560, 1440]
+        elif access_widgets["vid_res"].value == "4K":
+            config["size"] = [3840, 2160]
+        config["circular_looped_video"] = access_widgets["circular_vid"].value
+        config["AISS"] = access_widgets["AISS"].value
+
+        if len(config["background"]) == 6:
+            config["background"] = cv2.cvtColor(np.array(Image.new(mode="RGB", size=(config["size"][0], config["size"][1]), color=ImageColor.getrgb(f"#{config['background']}"))), cv2.COLOR_RGB2BGR)
+
+        render_queue.append(deepcopy(config))
+        continue_to_files(e)
 
     page.add(ft.ElevatedButton("Continue", on_click=continue_to_files))
 
